@@ -1,0 +1,3351 @@
+{
+  "datasets": [
+    {
+      "name": "8f864824",
+      "displayName": "mv_membership",
+      "asset_name": "aira_test.aibi_workshop_schema.mv_membership"
+    },
+    {
+      "name": "cd3a6ad8",
+      "displayName": "mv_claims",
+      "asset_name": "aira_test.aibi_workshop_schema.mv_claims"
+    },
+    {
+      "name": "adcee0e2",
+      "displayName": "mv_member_cost_profile",
+      "asset_name": "aira_test.aibi_workshop_schema.mv_member_cost_profile"
+    },
+    {
+      "name": "4d25f87d",
+      "displayName": "mv_member_lifecycle",
+      "asset_name": "aira_test.aibi_workshop_schema.mv_member_lifecycle"
+    },
+    {
+      "name": "25c26964",
+      "displayName": "mv_utilization",
+      "asset_name": "aira_test.aibi_workshop_schema.mv_utilization"
+    },
+    {
+      "name": "5a77a5cf",
+      "displayName": "mv_new_enrollment",
+      "asset_name": "aira_test.aibi_workshop_schema.mv_new_enrollment"
+    },
+    {
+      "name": "claims_by_benefit_param",
+      "displayName": "Claims by Benefit (Parameterized)",
+      "queryLines": [
+        "SELECT\n",
+        "  clm_dtl_benefit_category,\n",
+        "  clm_dtl_place_of_service,\n",
+        "  clm_dtl_specific_dos_date,\n",
+        "  clm_dtl_paid_amt,\n",
+        "  clm_dtl_allowed_amt,\n",
+        "  clm_dtl_claim_id,\n",
+        "  clm_dtl_line_status\n",
+        "FROM\n",
+        "  aira_test.aibi_workshop_schema.fact_claim_detail\n",
+        "WHERE\n",
+        "  (\n",
+        "    COALESCE(ARRAY_SIZE(:benefit_category), 0) = 0\n",
+        "    OR array_contains(:benefit_category, clm_dtl_benefit_category)\n",
+        "  )\n",
+        "  AND clm_dtl_specific_dos_date\n",
+        "    >= COALESCE(\n",
+        "      :service_date_range.min,\n",
+        "      (\n",
+        "        SELECT\n",
+        "          MIN(clm_dtl_specific_dos_date)\n",
+        "        FROM\n",
+        "          aira_test.aibi_workshop_schema.fact_claim_detail\n",
+        "      )\n",
+        "    )\n",
+        "  AND clm_dtl_specific_dos_date\n",
+        "    <= COALESCE(\n",
+        "      :service_date_range.max,\n",
+        "      (\n",
+        "        SELECT\n",
+        "          MAX(clm_dtl_specific_dos_date)\n",
+        "        FROM\n",
+        "          aira_test.aibi_workshop_schema.fact_claim_detail\n",
+        "      )\n",
+        "    )"
+      ],
+      "parameters": [
+        {
+          "displayName": "Benefit Category",
+          "keyword": "benefit_category",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "Medical"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "displayName": "Service Date Range",
+          "keyword": "service_date_range",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE",
+              "min": {
+                "value": "2023-04-01"
+              },
+              "max": {
+                "value": "2026-03-31"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "benefit_category_lookup",
+      "displayName": "Benefit Category Lookup",
+      "queryLines": [
+        "SELECT DISTINCT\n",
+        "  clm_dtl_benefit_category\n",
+        "FROM\n",
+        "  aira_test.aibi_workshop_schema.fact_claim_detail\n",
+        "WHERE\n",
+        "  clm_dtl_benefit_category IS NOT NULL\n",
+        "ORDER BY\n",
+        "  clm_dtl_benefit_category"
+      ]
+    },
+    {
+      "name": "228586d4",
+      "displayName": "Service_date_default_picker (Paramterized)",
+      "queryLines": [
+        "Select distinct `Service Date` from aira_test.aibi_workshop_schema.mv_claims\n",
+        "where `Service Date` = coalesce((Select max(`Service Date`) from aira_test.aibi_workshop_schema.mv_claims), :p_default_service_date)"
+      ],
+      "parameters": [
+        {
+          "displayName": "p_default_service_date",
+          "keyword": "p_default_service_date",
+          "dataType": "STRING",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": [
+                {
+                  "value": "null"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "6f1d2553",
+      "displayName": "Members KPIs",
+      "layout": [
+        {
+          "widget": {
+            "name": "total_members",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "8f864824",
+                  "fields": [
+                    {
+                      "name": "measure(Total Members)",
+                      "expression": "MEASURE(`Total Members`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Total Members",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(Total Members)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Total Members"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "active_members",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "8f864824",
+                  "fields": [
+                    {
+                      "name": "measure(Active Members)",
+                      "expression": "MEASURE(`Active Members`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Active Members",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(Active Members)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Active Members"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "active_subscribers",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "8f864824",
+                  "fields": [
+                    {
+                      "name": "measure(Active Subscribers)",
+                      "expression": "MEASURE(`Active Subscribers`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Active Subscribers",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(Active Subscribers)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Active Subscribers"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 0,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "pcp_assigned_rate",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "8f864824",
+                  "fields": [
+                    {
+                      "name": "measure(PCP Assigned Rate)",
+                      "expression": "MEASURE(`PCP Assigned Rate`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "PCP Assigned Rate",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(PCP Assigned Rate)",
+                  "format": {
+                    "type": "number-percent",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 1
+                    }
+                  },
+                  "displayName": "PCP Assigned Rate"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "medicaid_count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "8f864824",
+                  "fields": [
+                    {
+                      "name": "measure(Medicaid Member Count)",
+                      "expression": "MEASURE(`Medicaid Member Count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Medicaid Member Count",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(Medicaid Member Count)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Medicaid Member Count"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 3,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "deceased_count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "8f864824",
+                  "fields": [
+                    {
+                      "name": "measure(Deceased Member Count)",
+                      "expression": "MEASURE(`Deceased Member Count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Deceased Member Count",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(Deceased Member Count)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Deceased Member Count"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 3,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "members_by_lob",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "8f864824",
+                  "fields": [
+                    {
+                      "name": "Line of Business Name",
+                      "expression": "`Line of Business Name`"
+                    },
+                    {
+                      "name": "measure(Active Members)",
+                      "expression": "MEASURE(`Active Members`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Active Members by Line of Business",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Line of Business Name",
+                  "displayName": "Line of Business Name",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(Active Members)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Active Members",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "members_by_state",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "8f864824",
+                  "fields": [
+                    {
+                      "name": "State",
+                      "expression": "`State`"
+                    },
+                    {
+                      "name": "measure(Active Members)",
+                      "expression": "MEASURE(`Active Members`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Active Members by State",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "State",
+                  "displayName": "State",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(Active Members)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Active Members",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 6,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "members_by_sex",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "8f864824",
+                  "fields": [
+                    {
+                      "name": "Sex",
+                      "expression": "`Sex`"
+                    },
+                    {
+                      "name": "measure(Active Members)",
+                      "expression": "MEASURE(`Active Members`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Members by Sex",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Sex",
+                  "displayName": "Sex",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(Active Members)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Active Members",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 12,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "members_by_relationship",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "8f864824",
+                  "fields": [
+                    {
+                      "name": "Relationship Type",
+                      "expression": "`Relationship Type`"
+                    },
+                    {
+                      "name": "measure(Active Members)",
+                      "expression": "MEASURE(`Active Members`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Members by Relationship Type",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Relationship Type",
+                  "displayName": "Relationship Type",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(Active Members)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Active Members",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 12,
+            "width": 6,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "claims_kpis",
+      "displayName": "Claims KPIs",
+      "layout": [
+        {
+          "widget": {
+            "name": "total_claims",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "cd3a6ad8",
+                  "fields": [
+                    {
+                      "name": "measure(Total Claims)",
+                      "expression": "MEASURE(`Total Claims`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Total Claims",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(Total Claims)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Total Claims"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "total_claim_lines",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "cd3a6ad8",
+                  "fields": [
+                    {
+                      "name": "measure(Total Claim Lines)",
+                      "expression": "MEASURE(`Total Claim Lines`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Total Claim Lines",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(Total Claim Lines)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Total Claim Lines"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "total_paid",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "cd3a6ad8",
+                  "fields": [
+                    {
+                      "name": "measure(Total Paid Amount)",
+                      "expression": "MEASURE(`Total Paid Amount`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Total Paid Amount",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(Total Paid Amount)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 2
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Total Paid Amount"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 0,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "avg_paid_claim",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "cd3a6ad8",
+                  "fields": [
+                    {
+                      "name": "measure(Avg Paid per Claim)",
+                      "expression": "MEASURE(`Avg Paid per Claim`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Avg Paid per Claim",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(Avg Paid per Claim)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 2
+                    },
+                    "abbreviation": "none"
+                  },
+                  "displayName": "Avg Paid per Claim"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "clean_claim_rate",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "cd3a6ad8",
+                  "fields": [
+                    {
+                      "name": "measure(Clean Claim Rate)",
+                      "expression": "MEASURE(`Clean Claim Rate`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Clean Claim Rate",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(Clean Claim Rate)",
+                  "format": {
+                    "type": "number-percent",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 1
+                    }
+                  },
+                  "displayName": "Clean Claim Rate"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 3,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "inpatient_count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "cd3a6ad8",
+                  "fields": [
+                    {
+                      "name": "measure(Inpatient Claim Count)",
+                      "expression": "MEASURE(`Inpatient Claim Count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Inpatient Claim Count",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(Inpatient Claim Count)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Inpatient Claim Count"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 3,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "paid_by_month",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "cd3a6ad8",
+                  "fields": [
+                    {
+                      "name": "Service Month",
+                      "expression": "`Service Month`"
+                    },
+                    {
+                      "name": "measure(Total Paid Amount)",
+                      "expression": "MEASURE(`Total Paid Amount`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Total Paid by Service Month",
+                "showTitle": true
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "Service Month",
+                  "displayName": "Service Month",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(Total Paid Amount)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Total Paid Amount",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "claims_by_benefit",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "cd3a6ad8",
+                  "fields": [
+                    {
+                      "name": "Benefit Category",
+                      "expression": "`Benefit Category`"
+                    },
+                    {
+                      "name": "measure(Total Claims)",
+                      "expression": "MEASURE(`Total Claims`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Claims by Benefit Category",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Benefit Category",
+                  "displayName": "Benefit Category",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(Total Claims)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Total Claims",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 6,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "claims_by_type",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "cd3a6ad8",
+                  "fields": [
+                    {
+                      "name": "Claim Type",
+                      "expression": "`Claim Type`"
+                    },
+                    {
+                      "name": "measure(Total Claims)",
+                      "expression": "MEASURE(`Total Claims`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Claims by Claim Type",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Claim Type",
+                  "displayName": "Claim Type",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(Total Claims)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Total Claims",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 12,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "paid_vs_allowed_vs_billed",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "cd3a6ad8",
+                  "fields": [
+                    {
+                      "name": "Service Year",
+                      "expression": "`Service Year`"
+                    },
+                    {
+                      "name": "measure(Total Paid Amount)",
+                      "expression": "MEASURE(`Total Paid Amount`)"
+                    },
+                    {
+                      "name": "measure(Total Allowed Amount)",
+                      "expression": "MEASURE(`Total Allowed Amount`)"
+                    },
+                    {
+                      "name": "measure(Total Billed Amount)",
+                      "expression": "MEASURE(`Total Billed Amount`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "frame": {
+                "title": "Paid vs Allowed vs Billed by Year",
+                "showTitle": true
+              },
+              "widgetType": "combo",
+              "encodings": {
+                "x": {
+                  "fieldName": "Service Year",
+                  "displayName": "Service Year",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "primary": {
+                    "fields": [
+                      {
+                        "fieldName": "measure(Total Paid Amount)",
+                        "displayName": "Total Paid Amount"
+                      },
+                      {
+                        "fieldName": "measure(Total Allowed Amount)",
+                        "displayName": "Total Allowed Amount"
+                      },
+                      {
+                        "fieldName": "measure(Total Billed Amount)",
+                        "displayName": "Total Billed Amount"
+                      }
+                    ],
+                    "scale": {
+                      "type": "quantitative"
+                    }
+                  },
+                  "secondary": {
+                    "fields": [],
+                    "scale": {
+                      "type": "quantitative"
+                    }
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 12,
+            "width": 6,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "member_claims_kpis",
+      "displayName": "Member-Claims KPIs",
+      "layout": [
+        {
+          "widget": {
+            "name": "avg_cost_member",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "adcee0e2",
+                  "fields": [
+                    {
+                      "name": "measure(Avg Cost per Member)",
+                      "expression": "MEASURE(`Avg Cost per Member`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Avg Cost per Member",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(Avg Cost per Member)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 2
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Avg Cost per Member"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "high_cost_count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "adcee0e2",
+                  "fields": [
+                    {
+                      "name": "measure(High-Cost Member Count)",
+                      "expression": "MEASURE(`High-Cost Member Count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "High-Cost Member Count",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(High-Cost Member Count)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "High-Cost Member Count"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "high_cost_spend_pct",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "adcee0e2",
+                  "fields": [
+                    {
+                      "name": "measure(High-Cost Member Spend Pct)",
+                      "expression": "MEASURE(`High-Cost Member Spend Pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "High-Cost Member Spend %",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(High-Cost Member Spend Pct)",
+                  "format": {
+                    "type": "number-percent",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 1
+                    }
+                  },
+                  "displayName": "High-Cost Member Spend Pct"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 0,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "pmpm",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "25c26964",
+                  "fields": [
+                    {
+                      "name": "measure(PMPM)",
+                      "expression": "MEASURE(`PMPM`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "PMPM",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(PMPM)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 2
+                    },
+                    "abbreviation": "none"
+                  },
+                  "displayName": "PMPM"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "claims_per_1000",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "25c26964",
+                  "fields": [
+                    {
+                      "name": "measure(Claims per 1000 Members)",
+                      "expression": "MEASURE(`Claims per 1000 Members`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Claims per 1,000 Members",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(Claims per 1000 Members)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 1
+                    },
+                    "abbreviation": "none"
+                  },
+                  "displayName": "Claims per 1000 Members"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 3,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "utilization_rate",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "25c26964",
+                  "fields": [
+                    {
+                      "name": "measure(Utilization Rate)",
+                      "expression": "MEASURE(`Utilization Rate`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Utilization Rate",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(Utilization Rate)",
+                  "format": {
+                    "type": "number-percent",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 1
+                    }
+                  },
+                  "displayName": "Utilization Rate"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 3,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "avg_cost_by_lob",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "adcee0e2",
+                  "fields": [
+                    {
+                      "name": "Line of Business Name",
+                      "expression": "`Line of Business Name`"
+                    },
+                    {
+                      "name": "measure(Avg Cost per Member)",
+                      "expression": "MEASURE(`Avg Cost per Member`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Avg Cost per Member by LOB",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Line of Business Name",
+                  "displayName": "Line of Business Name",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(Avg Cost per Member)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Avg Cost per Member",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "claims_1000_by_lob",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "25c26964",
+                  "fields": [
+                    {
+                      "name": "Line of Business",
+                      "expression": "`Line of Business`"
+                    },
+                    {
+                      "name": "measure(Claims per 1000 Members)",
+                      "expression": "MEASURE(`Claims per 1000 Members`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Claims per 1,000 by LOB",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Line of Business",
+                  "displayName": "Line of Business",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(Claims per 1000 Members)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 1
+                    },
+                    "abbreviation": "none"
+                  },
+                  "displayName": "Claims per 1000 Members",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 6,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "pcp_util_by_lob",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "adcee0e2",
+                  "fields": [
+                    {
+                      "name": "Line of Business Name",
+                      "expression": "`Line of Business Name`"
+                    },
+                    {
+                      "name": "measure(PCP Utilization Rate)",
+                      "expression": "MEASURE(`PCP Utilization Rate`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "PCP Utilization Rate by LOB",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Line of Business Name",
+                  "displayName": "Line of Business Name",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(PCP Utilization Rate)",
+                  "format": {
+                    "type": "number-percent",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 1
+                    }
+                  },
+                  "displayName": "PCP Utilization Rate",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 12,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "member_cost_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "adcee0e2",
+                  "fields": [
+                    {
+                      "name": "Line of Business Name",
+                      "expression": "`Line of Business Name`"
+                    },
+                    {
+                      "name": "measure(Active Members)",
+                      "expression": "MEASURE(`Active Members`)"
+                    },
+                    {
+                      "name": "measure(Members with Claims)",
+                      "expression": "MEASURE(`Members with Claims`)"
+                    },
+                    {
+                      "name": "measure(Total Paid Amount)",
+                      "expression": "MEASURE(`Total Paid Amount`)"
+                    },
+                    {
+                      "name": "measure(Avg Cost per Member)",
+                      "expression": "MEASURE(`Avg Cost per Member`)"
+                    },
+                    {
+                      "name": "measure(High-Cost Member Count)",
+                      "expression": "MEASURE(`High-Cost Member Count`)"
+                    },
+                    {
+                      "name": "measure(High-Cost Member Spend Pct)",
+                      "expression": "MEASURE(`High-Cost Member Spend Pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Member Cost Profile by LOB",
+                "showTitle": true
+              },
+              "rowsPerPage": 25,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "Line of Business Name",
+                    "displayName": "Line of Business Name"
+                  },
+                  {
+                    "fieldName": "measure(Active Members)",
+                    "displayName": "Active Members"
+                  },
+                  {
+                    "fieldName": "measure(Members with Claims)",
+                    "displayName": "Members with Claims"
+                  },
+                  {
+                    "fieldName": "measure(Total Paid Amount)",
+                    "displayName": "Total Paid Amount"
+                  },
+                  {
+                    "fieldName": "measure(Avg Cost per Member)",
+                    "displayName": "Avg Cost per Member"
+                  },
+                  {
+                    "fieldName": "measure(High-Cost Member Count)",
+                    "displayName": "High-Cost Member Count"
+                  },
+                  {
+                    "fieldName": "measure(High-Cost Member Spend Pct)",
+                    "displayName": "High-Cost Member Spend Pct"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 12,
+            "width": 6,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "window_rolling",
+      "displayName": "Window & Rolling Functions",
+      "layout": [
+        {
+          "widget": {
+            "name": "rolling_7d_claims",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "cd3a6ad8",
+                  "fields": [
+                    {
+                      "name": "Service Date",
+                      "expression": "`Service Date`"
+                    },
+                    {
+                      "name": "measure(Rolling 7d Claims)",
+                      "expression": "MEASURE(`Rolling 7d Claims`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Rolling 7-Day Claims",
+                "showTitle": true
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "Service Date",
+                  "displayName": "Service Date",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(Rolling 7d Claims)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Rolling 7d Claims",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "running_total_paid",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "cd3a6ad8",
+                  "fields": [
+                    {
+                      "name": "Service Month",
+                      "expression": "`Service Month`"
+                    },
+                    {
+                      "name": "measure(Running Total Paid)",
+                      "expression": "MEASURE(`Running Total Paid`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Running Total Paid",
+                "showTitle": true
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "Service Month",
+                  "displayName": "Service Month",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(Running Total Paid)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Running Total Paid",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "rolling_3mo_pmpm",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "25c26964",
+                  "fields": [
+                    {
+                      "name": "Enrollment Month",
+                      "expression": "`Enrollment Month`"
+                    },
+                    {
+                      "name": "measure(Rolling 3mo PMPM)",
+                      "expression": "MEASURE(`Rolling 3mo PMPM`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Rolling 3-Month PMPM",
+                "showTitle": true
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "Enrollment Month",
+                  "displayName": "Enrollment Month",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(Rolling 3mo PMPM)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 2
+                    },
+                    "abbreviation": "none"
+                  },
+                  "displayName": "Rolling 3mo PMPM",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "ytd_pmpm",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "25c26964",
+                  "fields": [
+                    {
+                      "name": "Enrollment Month",
+                      "expression": "`Enrollment Month`"
+                    },
+                    {
+                      "name": "measure(YTD PMPM)",
+                      "expression": "MEASURE(`YTD PMPM`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "YTD PMPM Trend",
+                "showTitle": true
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "Enrollment Month",
+                  "displayName": "Enrollment Month",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(YTD PMPM)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 2
+                    },
+                    "abbreviation": "none"
+                  },
+                  "displayName": "YTD PMPM",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 6,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "rolling_30d_enrollments",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4d25f87d",
+                  "fields": [
+                    {
+                      "name": "First Enrollment Date",
+                      "expression": "`First Enrollment Date`"
+                    },
+                    {
+                      "name": "measure(Rolling 30d New Enrollments)",
+                      "expression": "MEASURE(`Rolling 30d New Enrollments`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Rolling 30d New Enrollments",
+                "showTitle": true
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "First Enrollment Date",
+                  "displayName": "First Enrollment Date",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(Rolling 30d New Enrollments)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Rolling 30d New Enrollments",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 12,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "mom_growth",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "25c26964",
+                  "fields": [
+                    {
+                      "name": "Enrollment Month",
+                      "expression": "`Enrollment Month`"
+                    },
+                    {
+                      "name": "measure(MoM Active Member Growth Pct)",
+                      "expression": "MEASURE(`MoM Active Member Growth Pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "MoM Active Member Growth %",
+                "showTitle": true
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "Enrollment Month",
+                  "displayName": "Enrollment Month",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(MoM Active Member Growth Pct)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 1
+                    },
+                    "abbreviation": "none"
+                  },
+                  "displayName": "MoM Active Member Growth Pct",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 12,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "rolling_90d_clean_rate",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "cd3a6ad8",
+                  "fields": [
+                    {
+                      "name": "Service Date",
+                      "expression": "`Service Date`"
+                    },
+                    {
+                      "name": "measure(Rolling 90d Clean Rate)",
+                      "expression": "MEASURE(`Rolling 90d Clean Rate`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Rolling 90d Clean Claim Rate",
+                "showTitle": true
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "Service Date",
+                  "displayName": "Service Date",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(Rolling 90d Clean Rate)",
+                  "format": {
+                    "type": "number-percent",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 1
+                    }
+                  },
+                  "displayName": "Rolling 90d Clean Rate",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 18,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "cumulative_ytd_enrollments",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4d25f87d",
+                  "fields": [
+                    {
+                      "name": "First Enrollment Month",
+                      "expression": "`First Enrollment Month`"
+                    },
+                    {
+                      "name": "measure(Cumulative YTD New Enrollments)",
+                      "expression": "MEASURE(`Cumulative YTD New Enrollments`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Cumulative YTD New Enrollments",
+                "showTitle": true
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "First Enrollment Month",
+                  "displayName": "First Enrollment Month",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(Cumulative YTD New Enrollments)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Cumulative YTD New Enrollments",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 18,
+            "width": 6,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "global_filters",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "lob_filter",
+            "queries": [
+              {
+                "name": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea31b4715e5a4bbcdcf1d51c8b7_Line of Business",
+                "query": {
+                  "datasetName": "8f864824",
+                  "fields": [
+                    {
+                      "name": "Line of Business",
+                      "expression": "`Line of Business`"
+                    },
+                    {
+                      "name": "Line of Business_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea3387016f1b41dabc086bdfb01_Line of Business",
+                "query": {
+                  "datasetName": "cd3a6ad8",
+                  "fields": [
+                    {
+                      "name": "Line of Business",
+                      "expression": "`Line of Business`"
+                    },
+                    {
+                      "name": "Line of Business_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea33c1e1452bed91f2a560beef1_Line of Business",
+                "query": {
+                  "datasetName": "adcee0e2",
+                  "fields": [
+                    {
+                      "name": "Line of Business",
+                      "expression": "`Line of Business`"
+                    },
+                    {
+                      "name": "Line of Business_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea33fc51f7083af6c23565cf8f7_Line of Business",
+                "query": {
+                  "datasetName": "4d25f87d",
+                  "fields": [
+                    {
+                      "name": "Line of Business",
+                      "expression": "`Line of Business`"
+                    },
+                    {
+                      "name": "Line of Business_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea342ff1c39912ce59e708f8a06_Line of Business",
+                "query": {
+                  "datasetName": "25c26964",
+                  "fields": [
+                    {
+                      "name": "Line of Business",
+                      "expression": "`Line of Business`"
+                    },
+                    {
+                      "name": "Line of Business_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea34641106a9c33a9a44d428afd_Line of Business",
+                "query": {
+                  "datasetName": "5a77a5cf",
+                  "fields": [
+                    {
+                      "name": "Line of Business",
+                      "expression": "`Line of Business`"
+                    },
+                    {
+                      "name": "Line of Business_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Line of Business",
+                "showTitle": true
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "Line of Business",
+                    "queryName": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea31b4715e5a4bbcdcf1d51c8b7_Line of Business"
+                  },
+                  {
+                    "fieldName": "Line of Business",
+                    "queryName": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea3387016f1b41dabc086bdfb01_Line of Business"
+                  },
+                  {
+                    "fieldName": "Line of Business",
+                    "queryName": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea33c1e1452bed91f2a560beef1_Line of Business"
+                  },
+                  {
+                    "fieldName": "Line of Business",
+                    "queryName": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea33fc51f7083af6c23565cf8f7_Line of Business"
+                  },
+                  {
+                    "fieldName": "Line of Business",
+                    "queryName": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea342ff1c39912ce59e708f8a06_Line of Business"
+                  },
+                  {
+                    "fieldName": "Line of Business",
+                    "queryName": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea34641106a9c33a9a44d428afd_Line of Business"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 3,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "state_filter",
+            "queries": [
+              {
+                "name": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea31b4715e5a4bbcdcf1d51c8b7_State",
+                "query": {
+                  "datasetName": "8f864824",
+                  "fields": [
+                    {
+                      "name": "State",
+                      "expression": "`State`"
+                    },
+                    {
+                      "name": "State_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea33c1e1452bed91f2a560beef1_State",
+                "query": {
+                  "datasetName": "adcee0e2",
+                  "fields": [
+                    {
+                      "name": "State",
+                      "expression": "`State`"
+                    },
+                    {
+                      "name": "State_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea33fc51f7083af6c23565cf8f7_State",
+                "query": {
+                  "datasetName": "4d25f87d",
+                  "fields": [
+                    {
+                      "name": "State",
+                      "expression": "`State`"
+                    },
+                    {
+                      "name": "State_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea34641106a9c33a9a44d428afd_State",
+                "query": {
+                  "datasetName": "5a77a5cf",
+                  "fields": [
+                    {
+                      "name": "State",
+                      "expression": "`State`"
+                    },
+                    {
+                      "name": "State_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "State",
+                "showTitle": true
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "State",
+                    "queryName": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea31b4715e5a4bbcdcf1d51c8b7_State"
+                  },
+                  {
+                    "fieldName": "State",
+                    "queryName": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea33c1e1452bed91f2a560beef1_State"
+                  },
+                  {
+                    "fieldName": "State",
+                    "queryName": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea33fc51f7083af6c23565cf8f7_State"
+                  },
+                  {
+                    "fieldName": "State",
+                    "queryName": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea34641106a9c33a9a44d428afd_State"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 0,
+            "width": 3,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "benefit_category_filter",
+            "queries": [
+              {
+                "name": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea3387016f1b41dabc086bdfb01_Benefit Category",
+                "query": {
+                  "datasetName": "cd3a6ad8",
+                  "fields": [
+                    {
+                      "name": "Benefit Category",
+                      "expression": "`Benefit Category`"
+                    },
+                    {
+                      "name": "Benefit Category_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Benefit Category",
+                "showTitle": true
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "Benefit Category",
+                    "queryName": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea3387016f1b41dabc086bdfb01_Benefit Category"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 3,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "claim_type_filter",
+            "queries": [
+              {
+                "name": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea3387016f1b41dabc086bdfb01_Claim Type",
+                "query": {
+                  "datasetName": "cd3a6ad8",
+                  "fields": [
+                    {
+                      "name": "Claim Type",
+                      "expression": "`Claim Type`"
+                    },
+                    {
+                      "name": "Claim Type_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Claim Type",
+                "showTitle": true
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "Claim Type",
+                    "queryName": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea3387016f1b41dabc086bdfb01_Claim Type"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 0,
+            "width": 3,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "service_date_range",
+            "queries": [
+              {
+                "name": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea3387016f1b41dabc086bdfb01_Service Date",
+                "query": {
+                  "datasetName": "cd3a6ad8",
+                  "fields": [
+                    {
+                      "name": "Service Date",
+                      "expression": "`Service Date`"
+                    },
+                    {
+                      "name": "Service Date_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Service Date Range",
+                "showTitle": true
+              },
+              "widgetType": "filter-date-range-picker",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "Service Date",
+                    "queryName": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea3387016f1b41dabc086bdfb01_Service Date"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 4,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "enrollment_month_range",
+            "queries": [
+              {
+                "name": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea342ff1c39912ce59e708f8a06_Enrollment Month",
+                "query": {
+                  "datasetName": "25c26964",
+                  "fields": [
+                    {
+                      "name": "Enrollment Month",
+                      "expression": "`Enrollment Month`"
+                    },
+                    {
+                      "name": "Enrollment Month_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea33fc51f7083af6c23565cf8f7_First Enrollment Month",
+                "query": {
+                  "datasetName": "4d25f87d",
+                  "fields": [
+                    {
+                      "name": "First Enrollment Month",
+                      "expression": "`First Enrollment Month`"
+                    },
+                    {
+                      "name": "First Enrollment Month_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea34641106a9c33a9a44d428afd_First Enrollment Month",
+                "query": {
+                  "datasetName": "5a77a5cf",
+                  "fields": [
+                    {
+                      "name": "First Enrollment Month",
+                      "expression": "`First Enrollment Month`"
+                    },
+                    {
+                      "name": "First Enrollment Month_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Enrollment Month Range",
+                "showTitle": true
+              },
+              "widgetType": "filter-date-range-picker",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "Enrollment Month",
+                    "queryName": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea342ff1c39912ce59e708f8a06_Enrollment Month"
+                  },
+                  {
+                    "fieldName": "First Enrollment Month",
+                    "queryName": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea33fc51f7083af6c23565cf8f7_First Enrollment Month"
+                  },
+                  {
+                    "fieldName": "First Enrollment Month",
+                    "queryName": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea34641106a9c33a9a44d428afd_First Enrollment Month"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 1,
+            "width": 4,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "sex_filter",
+            "queries": [
+              {
+                "name": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea31b4715e5a4bbcdcf1d51c8b7_Sex",
+                "query": {
+                  "datasetName": "8f864824",
+                  "fields": [
+                    {
+                      "name": "Sex",
+                      "expression": "`Sex`"
+                    },
+                    {
+                      "name": "Sex_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea33c1e1452bed91f2a560beef1_Sex",
+                "query": {
+                  "datasetName": "adcee0e2",
+                  "fields": [
+                    {
+                      "name": "Sex",
+                      "expression": "`Sex`"
+                    },
+                    {
+                      "name": "Sex_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Sex",
+                "showTitle": true
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "Sex",
+                    "queryName": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea31b4715e5a4bbcdcf1d51c8b7_Sex"
+                  },
+                  {
+                    "fieldName": "Sex",
+                    "queryName": "dashboards/01f12ea25a261db599ed5afca3e5605c/datasets/01f12ea33c1e1452bed91f2a560beef1_Sex"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 1,
+            "width": 4,
+            "height": 1
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "param_filtering",
+      "displayName": "Parameter-Based Filtering",
+      "layout": [
+        {
+          "widget": {
+            "name": "intro_text",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Parameter-Based Filtering: Benefit Category Example\n",
+                "\n",
+                "This page demonstrates **parameter-based filtering** — a pattern where the filter widget passes selected values directly into a SQL `:parameter` in the dataset query's `WHERE` clause. Unlike column-based filtering (which post-filters results), parameter-based filtering **re-executes the SQL query** with the new parameter value, pushing the filter down to the data source.\n",
+                "\n",
+                "**How it works:**\n",
+                "1. The dataset SQL uses `WHERE array_contains(:benefit_category, clm_dtl_benefit_category)`\n",
+                "2. The **default value** (`Medical`) loads on dashboard open — no user action needed\n",
+                "3. The filter dropdown below (populated from a lookup dataset) lets users **change the selection at any time**\n",
+                "4. Changing the filter **re-runs the query** with the new parameter values, updating all widgets below"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "benefit_param_filter",
+            "queries": [
+              {
+                "name": "dashboards/01f1311e18ab1e6fbc26082f339b7de8/datasets/01f1311e18ac1fa194df8cbc60501988_Service Date",
+                "query": {
+                  "datasetName": "cd3a6ad8",
+                  "fields": [
+                    {
+                      "name": "Service Date",
+                      "expression": "`Service Date`"
+                    },
+                    {
+                      "name": "Service Date_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Benefit Category (Parameter-Bound)",
+                "showTitle": true
+              },
+              "widgetType": "filter-date-picker",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "Service Date",
+                    "queryName": "dashboards/01f1311e18ab1e6fbc26082f339b7de8/datasets/01f1311e18ac1fa194df8cbc60501988_Service Date"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "total_paid_counter",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "claims_by_benefit_param",
+                  "fields": [
+                    {
+                      "name": "sum(clm_dtl_paid_amt)",
+                      "expression": "SUM(`clm_dtl_paid_amt`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Total Paid (Filtered)",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(clm_dtl_paid_amt)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 2
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Total Paid"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "claim_count_counter",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "claims_by_benefit_param",
+                  "fields": [
+                    {
+                      "name": "count(clm_dtl_claim_id)",
+                      "expression": "COUNT(`clm_dtl_claim_id`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Claim Line Count (Filtered)",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "count(clm_dtl_claim_id)",
+                  "format": {
+                    "type": "number-plain",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Claim Lines"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 5,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "avg_paid_counter",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "claims_by_benefit_param",
+                  "fields": [
+                    {
+                      "name": "avg(clm_dtl_paid_amt)",
+                      "expression": "AVG(`clm_dtl_paid_amt`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Avg Paid per Line (Filtered)",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg(clm_dtl_paid_amt)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 2
+                    },
+                    "abbreviation": "none"
+                  },
+                  "displayName": "Avg Paid per Line"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 4,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "paid_by_pos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "claims_by_benefit_param",
+                  "fields": [
+                    {
+                      "name": "clm_dtl_place_of_service",
+                      "expression": "`clm_dtl_place_of_service`"
+                    },
+                    {
+                      "name": "sum(clm_dtl_paid_amt)",
+                      "expression": "SUM(`clm_dtl_paid_amt`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Total Paid by Place of Service (Filtered)",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "clm_dtl_place_of_service",
+                  "displayName": "Place of Service",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(clm_dtl_paid_amt)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Total Paid",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "claims_detail_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "claims_by_benefit_param",
+                  "fields": [
+                    {
+                      "name": "clm_dtl_benefit_category",
+                      "expression": "`clm_dtl_benefit_category`"
+                    },
+                    {
+                      "name": "clm_dtl_place_of_service",
+                      "expression": "`clm_dtl_place_of_service`"
+                    },
+                    {
+                      "name": "clm_dtl_specific_dos_date",
+                      "expression": "`clm_dtl_specific_dos_date`"
+                    },
+                    {
+                      "name": "clm_dtl_paid_amt",
+                      "expression": "`clm_dtl_paid_amt`"
+                    },
+                    {
+                      "name": "clm_dtl_allowed_amt",
+                      "expression": "`clm_dtl_allowed_amt`"
+                    },
+                    {
+                      "name": "clm_dtl_line_status",
+                      "expression": "`clm_dtl_line_status`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Filtered Claims Detail",
+                "showTitle": true
+              },
+              "rowsPerPage": 25,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "clm_dtl_benefit_category",
+                    "displayName": "Benefit Category"
+                  },
+                  {
+                    "fieldName": "clm_dtl_place_of_service",
+                    "displayName": "Place of Service"
+                  },
+                  {
+                    "fieldName": "clm_dtl_specific_dos_date",
+                    "displayName": "Service Date"
+                  },
+                  {
+                    "fieldName": "clm_dtl_paid_amt",
+                    "displayName": "Paid Amount"
+                  },
+                  {
+                    "fieldName": "clm_dtl_allowed_amt",
+                    "displayName": "Allowed Amount"
+                  },
+                  {
+                    "fieldName": "clm_dtl_line_status",
+                    "displayName": "Line Status"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 8,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "service_date_range_param",
+            "queries": [
+              {
+                "name": "parameter_dashboards/01f1311e18ab1e6fbc26082f339b7de8/datasets/01f1311e18ac1fc7836ed947b7373538_service_date_range",
+                "query": {
+                  "datasetName": "claims_by_benefit_param",
+                  "parameters": [
+                    {
+                      "name": "service_date_range",
+                      "keyword": "service_date_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Service Date Range (Parameter-Bound)",
+                "showTitle": true
+              },
+              "widgetType": "filter-date-range-picker",
+              "encodings": {
+                "fields": [
+                  {
+                    "parameterName": "service_date_range",
+                    "queryName": "parameter_dashboards/01f1311e18ab1e6fbc26082f339b7de8/datasets/01f1311e18ac1fc7836ed947b7373538_service_date_range"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 3,
+            "width": 6,
+            "height": 1
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": true
+  }
+}

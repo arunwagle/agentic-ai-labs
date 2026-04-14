@@ -1,4 +1,4 @@
-# JH Metrics View Demo V2
+# Workshop Metrics View Demo V2
 
 ## Table of contents
 
@@ -76,7 +76,7 @@ For more details, see the [Databricks Metric Views Documentation](https://docs.d
 
 ## How to run this demo with Databricks Genie Code
 
-This repository includes a **builder prompt** in [`prompts/JH_Demo_Prompts_v1.md`](prompts/JH_Demo_Prompts_v1.md) that instructs Genie Code to create the schema, metric view, SQL files, dashboards, Genie space, and this documentation. Follow the steps below in your Databricks workspace.
+This repository includes a **builder prompt** in [`prompts/Workshop_Demo_Prompts_v1.md`](prompts/Workshop_Demo_Prompts_v1.md) that instructs Genie Code to create the schema, metric view, SQL files, dashboards, Genie space, and this documentation. Follow the steps below in your Databricks workspace.
 
 ### Prerequisites
 
@@ -94,13 +94,13 @@ This repository includes a **builder prompt** in [`prompts/JH_Demo_Prompts_v1.md
    At the bottom of the Genie Code pane, switch to **Agent** mode. Agent mode is suited to **dashboard generation**, **pipeline-style tasks**, and **multi-step** workflows; Chat mode is better for short questions. Agent mode is not available in every surface—if Agent is unavailable where you are, open a context where it is supported (e.g. notebook or SQL editor per your workspace’s [Genie Code capabilities](https://docs.databricks.com/aws/en/genie-code/)).
 
 3. **Reference the prompt with `@`**  
-   In the Genie Code text box, type **`@`** and select **`JH_Demo_Prompts_v1`** (your workspace copy of [`prompts/JH_Demo_Prompts_v1.md`](prompts/JH_Demo_Prompts_v1.md)—import or sync this repo into the workspace first so the file appears in the `@` picker). That attaches the full builder prompt; you do not need to open the file elsewhere and copy-paste.  
+   In the Genie Code text box, type **`@`** and select **`Workshop_Demo_Prompts_v1`** (your workspace copy of [`prompts/Workshop_Demo_Prompts_v1.md`](prompts/Workshop_Demo_Prompts_v1.md)—import or sync this repo into the workspace first so the file appears in the `@` picker). That attaches the full builder prompt; you do not need to open the file elsewhere and copy-paste.  
    - If the attached file starts with `%md`, remove that line in the workspace copy—it is notebook magic, not part of the instruction block.  
-   - Replace **`<your-username>`** with your workspace path segment (e.g. `arun.wagle@databricks.com`) everywhere folder paths use it.  
-   - Align **folder names** with your workspace: the prompt references `/Workspace/Users/<your-username>/JH_Demo/`; this readme documents assets under `JH_Demo_v2`—edit the prompt file or say so in a follow-up so Genie targets the folder you want.
+   - Replace **`<your-username>`** with your workspace path segment (e.g. `your.name@company.com`) everywhere folder paths use it.  
+   - Align **folder names** with your workspace: the prompt references `/Workspace/Users/<your-username>/Workshop_Demo/`; this readme documents assets under `Workshop_Demo_v2`—edit the prompt file or say so in a follow-up so Genie targets the folder you want.
 
 4. **Send**  
-   Submit the message (with `@JH_Demo_Prompts_v1` attached). Add a short line if needed, e.g. “Execute all tasks in order.” Split by task (e.g. Task 1 only, then Task 2) if your session limits require it.
+   Submit the message (with `@Workshop_Demo_Prompts_v1` attached). Add a short line if needed, e.g. “Execute all tasks in order.” Split by task (e.g. Task 1 only, then Task 2) if your session limits require it.
 
 5. **Review and approve execution**  
    Genie Code may propose notebooks, SQL, or API calls (e.g. `dbutils.fs.rm`). **Review** suggested code before accepting. Use **Allow**, **Allow in this thread**, or **Always allow** according to your org’s policy when you are comfortable with the operations (deleting folders/schemas is destructive by design in this prompt’s prerequisites).
@@ -109,7 +109,7 @@ This repository includes a **builder prompt** in [`prompts/JH_Demo_Prompts_v1.md
    If dashboards show **Unknown column** or YAML errors, paste the error into a **follow-up** message and ask Genie to fix bindings or metric view definitions. Short iteration loops are normal.
 
 7. **Optional: sample SQL file**  
-   [`prompts/JH_Demo_Prompts_v2.md`](prompts/JH_Demo_Prompts_v2.md) contains **example `MEASURE()` queries** against `orders_metric_view` for validation; it is not the builder prompt. In Genie Code you can attach it with **`@JH_Demo_Prompts_v2`** (after it exists in the workspace) to run or adapt those queries.
+   [`prompts/Workshop_Demo_Prompts_v2.md`](prompts/Workshop_Demo_Prompts_v2.md) contains **example `MEASURE()` queries** against `orders_metric_view` for validation; it is not the builder prompt. In Genie Code you can attach it with **`@Workshop_Demo_Prompts_v2`** (after it exists in the workspace) to run or adapt those queries.
 
 ### Tips
 
@@ -120,14 +120,14 @@ This repository includes a **builder prompt** in [`prompts/JH_Demo_Prompts_v1.md
 
 ## Demo Assets Overview
 
-All assets are located in `/Workspace/Users/arun.wagle@databricks.com/JH_Demo_v2/`.
+All assets are located in `/Workspace/Users/your.name@company.com/Workshop_Demo_v2/`.
 
 ### 1. Schema & Metric View
 
 | Asset | Details |
 |-------|---------|
 | **Catalog** | `catalog_7w4dm4_eq04qz` |
-| **Schema** | `jh_metrics_view_demo_v1` |
+| **Schema** | `aibi_metrics_view_demo_v1` |
 | **Metric View** | `orders_metric_view` |
 | **Source Table** | `samples.tpch.orders` |
 
@@ -177,7 +177,7 @@ All assets are located in `/Workspace/Users/arun.wagle@databricks.com/JH_Demo_v2
 |-------|---------|
 | **Name** | Metric View Sample Queries V1 |
 | **Type** | SQL Query |
-| **Location** | JH_Demo_v2/ |
+| **Location** | Workshop_Demo_v2/ |
 | **Queries** | 10 sample queries testing all dimensions, joins, and composable measures |
 
 **Query Highlights:**
@@ -194,7 +194,7 @@ All assets are located in `/Workspace/Users/arun.wagle@databricks.com/JH_Demo_v2
 
 ### 3. Dashboards
 
-#### JH Metrics View Orders Dashboard V1
+#### Workshop Metrics View Orders Dashboard V1
 
 | Widget | Chart Type | Dimensions | Measures |
 |--------|-----------|------------|----------|
@@ -206,7 +206,7 @@ All assets are located in `/Workspace/Users/arun.wagle@databricks.com/JH_Demo_v2
 
 **Chart types used:** Bar, Line, Pie, Scatter (4 types)
 
-#### JH Metrics View Orders & Joins Dashboard V1
+#### Workshop Metrics View Orders & Joins Dashboard V1
 
 | Widget | Chart Type | Dimensions | Measures |
 |--------|-----------|------------|----------|
@@ -222,13 +222,13 @@ All assets are located in `/Workspace/Users/arun.wagle@databricks.com/JH_Demo_v2
 
 | Asset | Details |
 |-------|---------|
-| **Name** | JH Metrics View Space V1 |
+| **Name** | Workshop Metrics View Space V1 |
 | **Type** | Genie Space |
 | **Data Source** | `orders_metric_view` (Metric View) |
 | **Sample Questions** | 6 curated questions |
 | **Text Instructions** | Comprehensive dimension/measure reference |
 | **Example SQL Queries** | 6 annotated SQL examples |
-| **Location** | JH_Demo_v2/ |
+| **Location** | Workshop_Demo_v2/ |
 
 **Sample Questions:**
 1. Show total revenue broken down by customer region
@@ -244,9 +244,9 @@ All assets are located in `/Workspace/Users/arun.wagle@databricks.com/JH_Demo_v2
 
 | # | Asset | Type | ID / Location |
 |---|-------|------|---------------|
-| 1 | `catalog_7w4dm4_eq04qz.jh_metrics_view_demo_v1.orders_metric_view` | Metric View | Unity Catalog |
-| 2 | Metric View Sample Queries V1 | SQL Query | JH_Demo_v2/ |
-| 3 | JH Metrics View Orders Dashboard V1 | Dashboard | JH_Demo_v2/ |
-| 4 | JH Metrics View Orders & Joins Dashboard V1 | Dashboard | JH_Demo_v2/ |
-| 5 | JH Metrics View Space V1 | Genie Space | JH_Demo_v2/ |
-| 6 | readme.md | Documentation | JH_Demo_v2/ |
+| 1 | `catalog_7w4dm4_eq04qz.aibi_metrics_view_demo_v1.orders_metric_view` | Metric View | Unity Catalog |
+| 2 | Metric View Sample Queries V1 | SQL Query | Workshop_Demo_v2/ |
+| 3 | Workshop Metrics View Orders Dashboard V1 | Dashboard | Workshop_Demo_v2/ |
+| 4 | Workshop Metrics View Orders & Joins Dashboard V1 | Dashboard | Workshop_Demo_v2/ |
+| 5 | Workshop Metrics View Space V1 | Genie Space | Workshop_Demo_v2/ |
+| 6 | readme.md | Documentation | Workshop_Demo_v2/ |

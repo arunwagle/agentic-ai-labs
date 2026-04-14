@@ -1,0 +1,1295 @@
+{
+  "datasets": [
+    {
+      "name": "938353a9",
+      "displayName": "Revenue by Region",
+      "queryLines": [
+        "SELECT\n",
+        "  r.r_name AS region,\n",
+        "  ROUND(SUM(l.l_extendedprice * (1 - l.l_discount)), 2) AS revenue,\n",
+        "  COUNT(DISTINCT o.o_orderkey) AS total_orders\n",
+        "FROM\n",
+        "  aira_test.aibi_workshop_schema.lineitem l\n",
+        "    JOIN aira_test.aibi_workshop_schema.orders o\n",
+        "      ON l.l_orderkey = o.o_orderkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.customer c\n",
+        "      ON o.o_custkey = c.c_custkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.nation n\n",
+        "      ON c.c_nationkey = n.n_nationkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.region r\n",
+        "      ON n.n_regionkey = r.r_regionkey\n",
+        "GROUP BY\n",
+        "  r.r_name\n",
+        "ORDER BY\n",
+        "  revenue DESC"
+      ]
+    },
+    {
+      "name": "3fdae0c1",
+      "displayName": "Revenue by Nation",
+      "queryLines": [
+        "SELECT\n",
+        "  n.n_name AS nation,\n",
+        "  r.r_name AS region,\n",
+        "  ROUND(SUM(l.l_extendedprice * (1 - l.l_discount)), 2) AS revenue,\n",
+        "  COUNT(DISTINCT o.o_orderkey) AS total_orders,\n",
+        "  COUNT(DISTINCT c.c_custkey) AS total_customers\n",
+        "FROM\n",
+        "  aira_test.aibi_workshop_schema.lineitem l\n",
+        "    JOIN aira_test.aibi_workshop_schema.orders o\n",
+        "      ON l.l_orderkey = o.o_orderkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.customer c\n",
+        "      ON o.o_custkey = c.c_custkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.nation n\n",
+        "      ON c.c_nationkey = n.n_nationkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.region r\n",
+        "      ON n.n_regionkey = r.r_regionkey\n",
+        "GROUP BY\n",
+        "  n.n_name,\n",
+        "  r.r_name\n",
+        "ORDER BY\n",
+        "  revenue DESC"
+      ]
+    },
+    {
+      "name": "2c2dc5fe",
+      "displayName": "Top Customers",
+      "queryLines": [
+        "SELECT\n",
+        "  c.c_name AS customer_name,\n",
+        "  n.n_name AS nation,\n",
+        "  r.r_name AS region,\n",
+        "  c.c_mktsegment AS market_segment,\n",
+        "  ROUND(SUM(l.l_extendedprice * (1 - l.l_discount)), 2) AS revenue,\n",
+        "  COUNT(DISTINCT o.o_orderkey) AS total_orders\n",
+        "FROM\n",
+        "  aira_test.aibi_workshop_schema.lineitem l\n",
+        "    JOIN aira_test.aibi_workshop_schema.orders o\n",
+        "      ON l.l_orderkey = o.o_orderkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.customer c\n",
+        "      ON o.o_custkey = c.c_custkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.nation n\n",
+        "      ON c.c_nationkey = n.n_nationkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.region r\n",
+        "      ON n.n_regionkey = r.r_regionkey\n",
+        "GROUP BY\n",
+        "  c.c_name,\n",
+        "  n.n_name,\n",
+        "  r.r_name,\n",
+        "  c.c_mktsegment\n",
+        "ORDER BY\n",
+        "  revenue DESC\n",
+        "LIMIT 50"
+      ]
+    },
+    {
+      "name": "6682dc2c",
+      "displayName": "Top Suppliers",
+      "queryLines": [
+        "SELECT\n",
+        "  s.s_name AS supplier_name,\n",
+        "  n.n_name AS nation,\n",
+        "  r.r_name AS region,\n",
+        "  ROUND(SUM(l.l_extendedprice * (1 - l.l_discount)), 2) AS revenue,\n",
+        "  COUNT(DISTINCT l.l_orderkey) AS orders_supplied\n",
+        "FROM\n",
+        "  aira_test.aibi_workshop_schema.lineitem l\n",
+        "    JOIN aira_test.aibi_workshop_schema.supplier s\n",
+        "      ON l.l_suppkey = s.s_suppkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.nation n\n",
+        "      ON s.s_nationkey = n.n_nationkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.region r\n",
+        "      ON n.n_regionkey = r.r_regionkey\n",
+        "GROUP BY\n",
+        "  s.s_name,\n",
+        "  n.n_name,\n",
+        "  r.r_name\n",
+        "ORDER BY\n",
+        "  revenue DESC\n",
+        "LIMIT 50"
+      ]
+    },
+    {
+      "name": "4edd05bd",
+      "displayName": "Orders by Status",
+      "queryLines": [
+        "SELECT\n",
+        "  o.o_orderstatus AS order_status,\n",
+        "  o.o_orderpriority AS priority,\n",
+        "  r.r_name AS region,\n",
+        "  n.n_name AS nation,\n",
+        "  c.c_mktsegment AS market_segment,\n",
+        "  COUNT(*) AS order_count,\n",
+        "  ROUND(SUM(o.o_totalprice), 2) AS total_value,\n",
+        "  ROUND(AVG(o.o_totalprice), 2) AS avg_order_value\n",
+        "FROM\n",
+        "  aira_test.aibi_workshop_schema.orders o\n",
+        "    JOIN aira_test.aibi_workshop_schema.customer c\n",
+        "      ON o.o_custkey = c.c_custkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.nation n\n",
+        "      ON c.c_nationkey = n.n_nationkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.region r\n",
+        "      ON n.n_regionkey = r.r_regionkey\n",
+        "GROUP BY\n",
+        "  o.o_orderstatus,\n",
+        "  o.o_orderpriority,\n",
+        "  r.r_name,\n",
+        "  n.n_name,\n",
+        "  c.c_mktsegment\n",
+        "ORDER BY\n",
+        "  order_count DESC"
+      ]
+    },
+    {
+      "name": "70ca5c2d",
+      "displayName": "Monthly Order Trends",
+      "queryLines": [
+        "SELECT\n",
+        "  DATE_TRUNC('month', o.o_orderdate) AS order_month,\n",
+        "  r.r_name AS region,\n",
+        "  n.n_name AS nation,\n",
+        "  COUNT(*) AS order_count,\n",
+        "  ROUND(SUM(o.o_totalprice), 2) AS total_revenue,\n",
+        "  COUNT(DISTINCT o.o_custkey) AS unique_customers\n",
+        "FROM\n",
+        "  aira_test.aibi_workshop_schema.orders o\n",
+        "    JOIN aira_test.aibi_workshop_schema.customer c\n",
+        "      ON o.o_custkey = c.c_custkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.nation n\n",
+        "      ON c.c_nationkey = n.n_nationkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.region r\n",
+        "      ON n.n_regionkey = r.r_regionkey\n",
+        "GROUP BY\n",
+        "  DATE_TRUNC('month', o.o_orderdate),\n",
+        "  r.r_name,\n",
+        "  n.n_name\n",
+        "ORDER BY\n",
+        "  order_month"
+      ]
+    },
+    {
+      "name": "2cdbe31f",
+      "displayName": "Parts by Supplier Region",
+      "queryLines": [
+        "SELECT\n",
+        "  r.r_name AS region,\n",
+        "  p.p_type AS part_type,\n",
+        "  COUNT(DISTINCT ps.ps_partkey) AS part_count,\n",
+        "  COUNT(DISTINCT ps.ps_suppkey) AS supplier_count,\n",
+        "  ROUND(AVG(ps.ps_supplycost), 2) AS avg_supply_cost\n",
+        "FROM\n",
+        "  aira_test.aibi_workshop_schema.partsupp ps\n",
+        "    JOIN aira_test.aibi_workshop_schema.part p\n",
+        "      ON ps.ps_partkey = p.p_partkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.supplier s\n",
+        "      ON ps.ps_suppkey = s.s_suppkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.nation n\n",
+        "      ON s.s_nationkey = n.n_nationkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.region r\n",
+        "      ON n.n_regionkey = r.r_regionkey\n",
+        "GROUP BY\n",
+        "  r.r_name,\n",
+        "  p.p_type\n",
+        "ORDER BY\n",
+        "  part_count DESC"
+      ]
+    },
+    {
+      "name": "fb29eac7",
+      "displayName": "Shipping Analysis",
+      "queryLines": [
+        "SELECT\n",
+        "  l.l_shipmode AS ship_mode,\n",
+        "  l.l_shipinstruct AS ship_instruction,\n",
+        "  r.r_name AS region,\n",
+        "  n.n_name AS nation,\n",
+        "  COUNT(*) AS line_items,\n",
+        "  ROUND(SUM(l.l_extendedprice * (1 - l.l_discount)), 2) AS revenue,\n",
+        "  ROUND(AVG(DATEDIFF(l.l_receiptdate, l.l_shipdate)), 1) AS avg_delivery_days\n",
+        "FROM\n",
+        "  aira_test.aibi_workshop_schema.lineitem l\n",
+        "    JOIN aira_test.aibi_workshop_schema.orders o\n",
+        "      ON l.l_orderkey = o.o_orderkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.customer c\n",
+        "      ON o.o_custkey = c.c_custkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.nation n\n",
+        "      ON c.c_nationkey = n.n_nationkey\n",
+        "    JOIN aira_test.aibi_workshop_schema.region r\n",
+        "      ON n.n_regionkey = r.r_regionkey\n",
+        "GROUP BY\n",
+        "  l.l_shipmode,\n",
+        "  l.l_shipinstruct,\n",
+        "  r.r_name,\n",
+        "  n.n_name\n",
+        "ORDER BY\n",
+        "  revenue DESC"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "1ceaa4c0",
+      "displayName": "Revenue & Customers",
+      "layout": [
+        {
+          "widget": {
+            "name": "title",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Revenue & Customer Analytics\n",
+                "Generated from high-confidence (>90%) table relationship analysis of `samples.tpch`"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "revenue_region",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "938353a9",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "revenue",
+                      "expression": "`revenue`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Revenue by Region",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "region",
+                  "displayName": "Region",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "revenue",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 1
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Revenue",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "region",
+                  "legend": {
+                    "hide": true
+                  },
+                  "displayName": "Region",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "revenue_nation",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "3fdae0c1",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "nation",
+                      "expression": "`nation`"
+                    },
+                    {
+                      "name": "revenue",
+                      "expression": "`revenue`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Revenue by Nation",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "nation",
+                  "displayName": "Nation",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "y-reversed"
+                    }
+                  }
+                },
+                "y": {
+                  "fieldName": "revenue",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 1
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Revenue",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "region",
+                  "legend": {
+                    "position": "bottom"
+                  },
+                  "displayName": "Region",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 1,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "top_customers",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "2c2dc5fe",
+                  "fields": [
+                    {
+                      "name": "customer_name",
+                      "expression": "`customer_name`"
+                    },
+                    {
+                      "name": "nation",
+                      "expression": "`nation`"
+                    },
+                    {
+                      "name": "market_segment",
+                      "expression": "`market_segment`"
+                    },
+                    {
+                      "name": "revenue",
+                      "expression": "`revenue`"
+                    },
+                    {
+                      "name": "total_orders",
+                      "expression": "`total_orders`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Top 50 Customers by Revenue",
+                "showTitle": true
+              },
+              "rowsPerPage": 25,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "customer_name",
+                    "displayName": "Customer"
+                  },
+                  {
+                    "fieldName": "nation",
+                    "displayName": "Nation"
+                  },
+                  {
+                    "fieldName": "market_segment",
+                    "displayName": "Segment"
+                  },
+                  {
+                    "fieldName": "revenue",
+                    "displayName": "Revenue"
+                  },
+                  {
+                    "fieldName": "total_orders",
+                    "displayName": "Orders"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "top_suppliers",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "6682dc2c",
+                  "fields": [
+                    {
+                      "name": "nation",
+                      "expression": "`nation`"
+                    },
+                    {
+                      "name": "supplier_name",
+                      "expression": "`supplier_name`"
+                    },
+                    {
+                      "name": "revenue",
+                      "expression": "`revenue`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Top 50 Suppliers by Revenue",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "supplier_name",
+                  "displayName": "Supplier",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "y-reversed"
+                    }
+                  }
+                },
+                "y": {
+                  "fieldName": "revenue",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 1
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Revenue",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "nation",
+                  "legend": {
+                    "position": "right"
+                  },
+                  "displayName": "Nation",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 6,
+            "width": 6,
+            "height": 7
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "operations",
+      "displayName": "Operations & Supply Chain",
+      "layout": [
+        {
+          "widget": {
+            "name": "title",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Operations & Supply Chain\n",
+                "Order trends, fulfillment patterns, and supplier distribution across regions"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "orders_heatmap",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4edd05bd",
+                  "fields": [
+                    {
+                      "name": "order_status",
+                      "expression": "`order_status`"
+                    },
+                    {
+                      "name": "priority",
+                      "expression": "`priority`"
+                    },
+                    {
+                      "name": "sum(order_count)",
+                      "expression": "SUM(`order_count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Orders by Status & Priority",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "priority",
+                  "displayName": "Priority",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(order_count)",
+                  "displayName": "Order Count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "order_status",
+                  "legend": {
+                    "position": "bottom"
+                  },
+                  "displayName": "Order Status",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "parts_region",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "2cdbe31f",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "sum(part_count)",
+                      "expression": "SUM(`part_count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Parts by Supplier Region",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "region",
+                  "displayName": "Region",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(part_count)",
+                  "displayName": "Part Count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "region",
+                  "legend": {
+                    "hide": true
+                  },
+                  "displayName": "Region",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "shipping",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "fb29eac7",
+                  "fields": [
+                    {
+                      "name": "ship_instruction",
+                      "expression": "`ship_instruction`"
+                    },
+                    {
+                      "name": "ship_mode",
+                      "expression": "`ship_mode`"
+                    },
+                    {
+                      "name": "sum(revenue)",
+                      "expression": "SUM(`revenue`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Shipping Revenue by Mode",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "ship_mode",
+                  "displayName": "Ship Mode",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(revenue)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 1
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Revenue",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "ship_instruction",
+                  "legend": {
+                    "position": "bottom"
+                  },
+                  "displayName": "Instruction",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 6,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "monthly_trends_v2",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "70ca5c2d",
+                  "fields": [
+                    {
+                      "name": "order_month",
+                      "expression": "`order_month`"
+                    },
+                    {
+                      "name": "sum(total_revenue)",
+                      "expression": "SUM(`total_revenue`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Monthly Order Trends",
+                "showTitle": true
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "order_month",
+                  "displayName": "Month",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(total_revenue)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    },
+                    "abbreviation": "compact"
+                  },
+                  "displayName": "Total Revenue",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 1,
+            "width": 6,
+            "height": 5
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "global_filters",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "region_filter",
+            "queries": [
+              {
+                "name": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f87f381ebd8fafce9245406151_region",
+                "query": {
+                  "datasetName": "938353a9",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "region_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f88a0e1a159fc870fca6b17be5_region",
+                "query": {
+                  "datasetName": "3fdae0c1",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "region_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f890011b2a96903c122c3ddd18_region",
+                "query": {
+                  "datasetName": "2c2dc5fe",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "region_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f897831739b3e51e7db326af91_region",
+                "query": {
+                  "datasetName": "6682dc2c",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "region_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f8a0bd1b79bb802f0340a7b518_region",
+                "query": {
+                  "datasetName": "4edd05bd",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "region_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f8a7b217d397abcbd52b99e82e_region",
+                "query": {
+                  "datasetName": "70ca5c2d",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "region_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f8adbf10e5bb54cdb955fde034_region",
+                "query": {
+                  "datasetName": "2cdbe31f",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "region_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f8b3b0199b85f992b0c8d1800f_region",
+                "query": {
+                  "datasetName": "fb29eac7",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "region_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Region",
+                "showTitle": true
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "region",
+                    "queryName": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f87f381ebd8fafce9245406151_region"
+                  },
+                  {
+                    "fieldName": "region",
+                    "queryName": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f88a0e1a159fc870fca6b17be5_region"
+                  },
+                  {
+                    "fieldName": "region",
+                    "queryName": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f890011b2a96903c122c3ddd18_region"
+                  },
+                  {
+                    "fieldName": "region",
+                    "queryName": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f897831739b3e51e7db326af91_region"
+                  },
+                  {
+                    "fieldName": "region",
+                    "queryName": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f8a0bd1b79bb802f0340a7b518_region"
+                  },
+                  {
+                    "fieldName": "region",
+                    "queryName": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f8a7b217d397abcbd52b99e82e_region"
+                  },
+                  {
+                    "fieldName": "region",
+                    "queryName": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f8adbf10e5bb54cdb955fde034_region"
+                  },
+                  {
+                    "fieldName": "region",
+                    "queryName": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f8b3b0199b85f992b0c8d1800f_region"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "nation_filter",
+            "queries": [
+              {
+                "name": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f88a0e1a159fc870fca6b17be5_nation",
+                "query": {
+                  "datasetName": "3fdae0c1",
+                  "fields": [
+                    {
+                      "name": "nation",
+                      "expression": "`nation`"
+                    },
+                    {
+                      "name": "nation_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f890011b2a96903c122c3ddd18_nation",
+                "query": {
+                  "datasetName": "2c2dc5fe",
+                  "fields": [
+                    {
+                      "name": "nation",
+                      "expression": "`nation`"
+                    },
+                    {
+                      "name": "nation_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f897831739b3e51e7db326af91_nation",
+                "query": {
+                  "datasetName": "6682dc2c",
+                  "fields": [
+                    {
+                      "name": "nation",
+                      "expression": "`nation`"
+                    },
+                    {
+                      "name": "nation_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f8a0bd1b79bb802f0340a7b518_nation",
+                "query": {
+                  "datasetName": "4edd05bd",
+                  "fields": [
+                    {
+                      "name": "nation",
+                      "expression": "`nation`"
+                    },
+                    {
+                      "name": "nation_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f8a7b217d397abcbd52b99e82e_nation",
+                "query": {
+                  "datasetName": "70ca5c2d",
+                  "fields": [
+                    {
+                      "name": "nation",
+                      "expression": "`nation`"
+                    },
+                    {
+                      "name": "nation_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f8b3b0199b85f992b0c8d1800f_nation",
+                "query": {
+                  "datasetName": "fb29eac7",
+                  "fields": [
+                    {
+                      "name": "nation",
+                      "expression": "`nation`"
+                    },
+                    {
+                      "name": "nation_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Nation",
+                "showTitle": true
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "nation",
+                    "queryName": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f88a0e1a159fc870fca6b17be5_nation"
+                  },
+                  {
+                    "fieldName": "nation",
+                    "queryName": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f890011b2a96903c122c3ddd18_nation"
+                  },
+                  {
+                    "fieldName": "nation",
+                    "queryName": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f897831739b3e51e7db326af91_nation"
+                  },
+                  {
+                    "fieldName": "nation",
+                    "queryName": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f8a0bd1b79bb802f0340a7b518_nation"
+                  },
+                  {
+                    "fieldName": "nation",
+                    "queryName": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f8a7b217d397abcbd52b99e82e_nation"
+                  },
+                  {
+                    "fieldName": "nation",
+                    "queryName": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f8b3b0199b85f992b0c8d1800f_nation"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 4,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "segment_filter",
+            "queries": [
+              {
+                "name": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f890011b2a96903c122c3ddd18_market_segment",
+                "query": {
+                  "datasetName": "2c2dc5fe",
+                  "fields": [
+                    {
+                      "name": "market_segment",
+                      "expression": "`market_segment`"
+                    },
+                    {
+                      "name": "market_segment_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f8a0bd1b79bb802f0340a7b518_market_segment",
+                "query": {
+                  "datasetName": "4edd05bd",
+                  "fields": [
+                    {
+                      "name": "market_segment",
+                      "expression": "`market_segment`"
+                    },
+                    {
+                      "name": "market_segment_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Market Segment",
+                "showTitle": true
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "market_segment",
+                    "queryName": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f890011b2a96903c122c3ddd18_market_segment"
+                  },
+                  {
+                    "fieldName": "market_segment",
+                    "queryName": "dashboards/01f129f8404114938e58e0ad2c1a3926/datasets/01f129f8a0bd1b79bb802f0340a7b518_market_segment"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 0,
+            "width": 4,
+            "height": 1
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}

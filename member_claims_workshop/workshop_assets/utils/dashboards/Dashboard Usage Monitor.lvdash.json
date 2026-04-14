@@ -1,0 +1,1155 @@
+{
+  "datasets": [
+    {
+      "name": "dashboards_created",
+      "displayName": "Dashboards Created",
+      "queryLines": [
+        "SELECT\n",
+        "  COUNT(*) as dashboards_created\n",
+        "FROM\n",
+        "  system.access.audit\n",
+        "WHERE\n",
+        "  action_name = 'createDashboard'\n",
+        "  AND event_date >= current_date() - INTERVAL 30 days\n",
+        "  AND (\n",
+        "    COALESCE(CARDINALITY(:user_filter), 0) = 0\n",
+        "    OR array_contains(:user_filter, user_identity.email)\n",
+        "  )"
+      ],
+      "parameters": [
+        {
+          "displayName": "User Email",
+          "keyword": "user_filter",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "total_views",
+      "displayName": "Total Dashboard Views",
+      "queryLines": [
+        "SELECT\n",
+        "  COUNT(*) as total_views\n",
+        "FROM\n",
+        "  system.access.audit\n",
+        "WHERE\n",
+        "  action_name IN ('getDashboard', 'getPublishedDashboard')\n",
+        "  AND event_date >= current_date() - INTERVAL 30 days\n",
+        "  AND (\n",
+        "    COALESCE(CARDINALITY(:user_filter), 0) = 0\n",
+        "    OR array_contains(:user_filter, user_identity.email)\n",
+        "  )\n",
+        "  AND (\n",
+        "    COALESCE(CARDINALITY(:dashboard_filter), 0) = 0\n",
+        "    OR array_contains(:dashboard_filter, request_params.dashboard_id)\n",
+        "  )"
+      ],
+      "parameters": [
+        {
+          "displayName": "User Email",
+          "keyword": "user_filter",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING"
+            }
+          }
+        },
+        {
+          "displayName": "Dashboard ID",
+          "keyword": "dashboard_filter",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "popular_dashboards",
+      "displayName": "Most Popular Dashboards",
+      "queryLines": [
+        "SELECT\n",
+        "  request_params.dashboard_id as dashboard_id,\n",
+        "  COUNT(*) AS view_count\n",
+        "FROM\n",
+        "  system.access.audit\n",
+        "WHERE\n",
+        "  action_name IN ('getDashboard', 'getPublishedDashboard')\n",
+        "  AND event_date >= current_date() - INTERVAL 30 days\n",
+        "  AND (\n",
+        "    COALESCE(CARDINALITY(:user_filter), 0) = 0\n",
+        "    OR array_contains(:user_filter, user_identity.email)\n",
+        "  )\n",
+        "GROUP BY\n",
+        "  dashboard_id\n",
+        "ORDER BY\n",
+        "  view_count DESC\n",
+        "LIMIT 15"
+      ],
+      "parameters": [
+        {
+          "displayName": "User Email",
+          "keyword": "user_filter",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "dashboards_published",
+      "displayName": "Dashboards Published",
+      "queryLines": [
+        "SELECT\n",
+        "  COUNT(*) as dashboards_published\n",
+        "FROM\n",
+        "  system.access.audit\n",
+        "WHERE\n",
+        "  action_name = 'publishDashboard'\n",
+        "  AND event_date >= current_date() - INTERVAL 30 days\n",
+        "  AND (\n",
+        "    COALESCE(CARDINALITY(:user_filter), 0) = 0\n",
+        "    OR array_contains(:user_filter, user_identity.email)\n",
+        "  )\n",
+        "  AND (\n",
+        "    COALESCE(CARDINALITY(:dashboard_filter), 0) = 0\n",
+        "    OR array_contains(:dashboard_filter, request_params.dashboard_id)\n",
+        "  )"
+      ],
+      "parameters": [
+        {
+          "displayName": "User Email",
+          "keyword": "user_filter",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING"
+            }
+          }
+        },
+        {
+          "displayName": "Dashboard ID",
+          "keyword": "dashboard_filter",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "daily_activity_trend",
+      "displayName": "Daily Activity Trend",
+      "queryLines": [
+        "SELECT\n",
+        "  event_date,\n",
+        "  CASE\n",
+        "    WHEN action_name IN ('getDashboard', 'getPublishedDashboard') THEN 'Views'\n",
+        "    WHEN action_name = 'createDashboard' THEN 'Created'\n",
+        "    WHEN action_name = 'updateDashboard' THEN 'Updated'\n",
+        "    WHEN action_name = 'publishDashboard' THEN 'Published'\n",
+        "    ELSE 'Other'\n",
+        "  END as action_category,\n",
+        "  COUNT(*) as event_count\n",
+        "FROM\n",
+        "  system.access.audit\n",
+        "WHERE\n",
+        "  service_name = 'dashboards'\n",
+        "  AND action_name IN (\n",
+        "    'getDashboard',\n",
+        "    'getPublishedDashboard',\n",
+        "    'createDashboard',\n",
+        "    'updateDashboard',\n",
+        "    'publishDashboard'\n",
+        "  )\n",
+        "  AND event_date >= current_date() - INTERVAL 30 days\n",
+        "  AND (\n",
+        "    COALESCE(CARDINALITY(:user_filter), 0) = 0\n",
+        "    OR array_contains(:user_filter, user_identity.email)\n",
+        "  )\n",
+        "GROUP BY\n",
+        "  event_date,\n",
+        "  action_category\n",
+        "ORDER BY\n",
+        "  event_date"
+      ],
+      "parameters": [
+        {
+          "displayName": "User Email",
+          "keyword": "user_filter",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "top_viewers",
+      "displayName": "Top Dashboard Viewers",
+      "queryLines": [
+        "SELECT\n",
+        "  user_identity.email as user_email,\n",
+        "  COUNT(*) as view_count\n",
+        "FROM\n",
+        "  system.access.audit\n",
+        "WHERE\n",
+        "  action_name IN ('getDashboard', 'getPublishedDashboard')\n",
+        "  AND event_date >= current_date() - INTERVAL 7 days\n",
+        "GROUP BY\n",
+        "  user_email\n",
+        "ORDER BY\n",
+        "  view_count DESC\n",
+        "LIMIT 20"
+      ]
+    },
+    {
+      "name": "recent_deletions",
+      "displayName": "Recent Dashboard Deletions",
+      "queryLines": [
+        "SELECT\n",
+        "  event_time,\n",
+        "  user_identity.email as user_email,\n",
+        "  request_params.dashboard_id as dashboard_id,\n",
+        "  action_name\n",
+        "FROM\n",
+        "  system.access.audit\n",
+        "WHERE\n",
+        "  action_name IN ('trashDashboard', 'deleteDashboard')\n",
+        "  AND event_date >= current_date() - INTERVAL 30 days\n",
+        "ORDER BY\n",
+        "  event_time DESC\n",
+        "LIMIT 50"
+      ]
+    },
+    {
+      "name": "views_by_user",
+      "displayName": "Views by User Draft vs Published",
+      "queryLines": [
+        "SELECT\n",
+        "  user_identity.email as user_email,\n",
+        "  action_name,\n",
+        "  COUNT(*) as view_count\n",
+        "FROM\n",
+        "  system.access.audit\n",
+        "WHERE\n",
+        "  service_name = 'dashboards'\n",
+        "  AND action_name IN ('getDashboard', 'getPublishedDashboard')\n",
+        "  AND event_date >= current_date() - INTERVAL 7 days\n",
+        "GROUP BY\n",
+        "  user_email,\n",
+        "  action_name\n",
+        "ORDER BY\n",
+        "  view_count DESC"
+      ]
+    },
+    {
+      "name": "top_creators",
+      "displayName": "Top Dashboard Creators",
+      "queryLines": [
+        "SELECT\n",
+        "  user_identity.email as user_email,\n",
+        "  COUNT(*) as dashboards_created\n",
+        "FROM\n",
+        "  system.access.audit\n",
+        "WHERE\n",
+        "  action_name = 'createDashboard'\n",
+        "  AND event_date >= current_date() - INTERVAL 30 days\n",
+        "GROUP BY\n",
+        "  user_email\n",
+        "ORDER BY\n",
+        "  dashboards_created DESC\n",
+        "LIMIT 15"
+      ]
+    },
+    {
+      "name": "actions_summary",
+      "displayName": "Dashboard Actions Summary",
+      "queryLines": [
+        "SELECT\n",
+        "  action_name,\n",
+        "  COUNT(*) as event_count,\n",
+        "  COUNT(DISTINCT user_identity.email) as unique_users,\n",
+        "  MIN(event_date) as first_seen,\n",
+        "  MAX(event_date) as last_seen\n",
+        "FROM\n",
+        "  system.access.audit\n",
+        "WHERE\n",
+        "  service_name = 'dashboards'\n",
+        "  AND event_date >= current_date() - INTERVAL 30 days\n",
+        "  AND (\n",
+        "    COALESCE(CARDINALITY(:user_filter), 0) = 0\n",
+        "    OR array_contains(:user_filter, user_identity.email)\n",
+        "  )\n",
+        "GROUP BY\n",
+        "  action_name\n",
+        "ORDER BY\n",
+        "  event_count DESC"
+      ],
+      "parameters": [
+        {
+          "displayName": "User Email",
+          "keyword": "user_filter",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "filter_users",
+      "displayName": "Filter Values - Users",
+      "queryLines": [
+        "SELECT DISTINCT\n",
+        "  user_identity.email as user_email\n",
+        "FROM\n",
+        "  system.access.audit\n",
+        "WHERE\n",
+        "  service_name = 'dashboards'\n",
+        "  AND event_date >= current_date() - INTERVAL 90 days\n",
+        "  AND user_identity.email IS NOT NULL\n",
+        "  AND user_identity.email != 'System-User'\n",
+        "ORDER BY\n",
+        "  user_email"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "65d8b640",
+      "displayName": "Dashboard Activity Overview",
+      "layout": [
+        {
+          "widget": {
+            "name": "counter_created",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "dashboards_created",
+                  "fields": [
+                    {
+                      "name": "dashboards_created",
+                      "expression": "`dashboards_created`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Dashboards Created (Last 30 Days)",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "dashboards_created",
+                  "displayName": "Dashboards Created"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "counter_views",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "total_views",
+                  "fields": [
+                    {
+                      "name": "total_views",
+                      "expression": "`total_views`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Total Dashboard Views (Last 30 Days)",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_views",
+                  "displayName": "Total Views"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 4,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "counter_published",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "dashboards_published",
+                  "fields": [
+                    {
+                      "name": "dashboards_published",
+                      "expression": "`dashboards_published`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Dashboards Published (Last 30 Days)",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "dashboards_published",
+                  "displayName": "Dashboards Published"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 0,
+            "width": 4,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "daily_trend",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "daily_activity_trend",
+                  "fields": [
+                    {
+                      "name": "action_category",
+                      "expression": "`action_category`"
+                    },
+                    {
+                      "name": "event_date",
+                      "expression": "`event_date`"
+                    },
+                    {
+                      "name": "event_count",
+                      "expression": "`event_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Daily Dashboard Activity Trend",
+                "showTitle": true
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "event_date",
+                  "displayName": "Event Date",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "event_count",
+                  "displayName": "Event Count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "action_category",
+                  "displayName": "Action Category",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 12,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "popular_dashboards",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "popular_dashboards",
+                  "fields": [
+                    {
+                      "name": "dashboard_id",
+                      "expression": "`dashboard_id`"
+                    },
+                    {
+                      "name": "view_count",
+                      "expression": "`view_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Most Popular Dashboards (by Views)",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "dashboard_id",
+                  "displayName": "Dashboard ID",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "view_count",
+                  "displayName": "View Count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 12,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "actions_summary",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "actions_summary",
+                  "fields": [
+                    {
+                      "name": "action_name",
+                      "expression": "`action_name`"
+                    },
+                    {
+                      "name": "event_count",
+                      "expression": "`event_count`"
+                    },
+                    {
+                      "name": "unique_users",
+                      "expression": "`unique_users`"
+                    },
+                    {
+                      "name": "first_seen",
+                      "expression": "`first_seen`"
+                    },
+                    {
+                      "name": "last_seen",
+                      "expression": "`last_seen`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Dashboard Actions Summary",
+                "showTitle": true
+              },
+              "rowsPerPage": 25,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "action_name",
+                    "displayName": "Action Name"
+                  },
+                  {
+                    "fieldName": "event_count",
+                    "displayName": "Event Count"
+                  },
+                  {
+                    "fieldName": "unique_users",
+                    "displayName": "Unique Users"
+                  },
+                  {
+                    "fieldName": "first_seen",
+                    "displayName": "First Seen"
+                  },
+                  {
+                    "fieldName": "last_seen",
+                    "displayName": "Last Seen"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 12,
+            "width": 12,
+            "height": 5
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "user_activity",
+      "displayName": "User Activity & Details",
+      "layout": [
+        {
+          "widget": {
+            "name": "top_viewers",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "top_viewers",
+                  "fields": [
+                    {
+                      "name": "user_email",
+                      "expression": "`user_email`"
+                    },
+                    {
+                      "name": "view_count",
+                      "expression": "`view_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Top Dashboard Viewers (Last 7 Days)",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "user_email",
+                  "displayName": "User Email",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "view_count",
+                  "displayName": "View Count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "top_creators",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "top_creators",
+                  "fields": [
+                    {
+                      "name": "user_email",
+                      "expression": "`user_email`"
+                    },
+                    {
+                      "name": "dashboards_created",
+                      "expression": "`dashboards_created`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Top Dashboard Creators (Last 30 Days)",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "user_email",
+                  "displayName": "User Email",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "dashboards_created",
+                  "displayName": "Dashboards Created",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "views_by_user",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "views_by_user",
+                  "fields": [
+                    {
+                      "name": "user_email",
+                      "expression": "`user_email`"
+                    },
+                    {
+                      "name": "action_name",
+                      "expression": "`action_name`"
+                    },
+                    {
+                      "name": "view_count",
+                      "expression": "`view_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Views by User (Draft vs Published)",
+                "showTitle": true
+              },
+              "rowsPerPage": 25,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "user_email",
+                    "displayName": "User Email"
+                  },
+                  {
+                    "fieldName": "action_name",
+                    "displayName": "Action Name"
+                  },
+                  {
+                    "fieldName": "view_count",
+                    "displayName": "View Count"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "recent_deletions",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "recent_deletions",
+                  "fields": [
+                    {
+                      "name": "event_time",
+                      "expression": "`event_time`"
+                    },
+                    {
+                      "name": "user_email",
+                      "expression": "`user_email`"
+                    },
+                    {
+                      "name": "dashboard_id",
+                      "expression": "`dashboard_id`"
+                    },
+                    {
+                      "name": "action_name",
+                      "expression": "`action_name`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Recent Dashboard Deletions",
+                "showTitle": true
+              },
+              "rowsPerPage": 25,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "event_time",
+                    "displayName": "Event Time"
+                  },
+                  {
+                    "fieldName": "user_email",
+                    "displayName": "User Email"
+                  },
+                  {
+                    "fieldName": "dashboard_id",
+                    "displayName": "Dashboard ID"
+                  },
+                  {
+                    "fieldName": "action_name",
+                    "displayName": "Action"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 6,
+            "width": 6,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "global_filters",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "user_filter",
+            "queries": [
+              {
+                "name": "dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6eca231c54a031f0c6537ebe4e_user_email",
+                "query": {
+                  "datasetName": "filter_users",
+                  "fields": [
+                    {
+                      "name": "user_email",
+                      "expression": "`user_email`"
+                    },
+                    {
+                      "name": "user_email_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6d3a051b609ae40a20fb681bf1_user_email",
+                "query": {
+                  "datasetName": "top_viewers",
+                  "fields": [
+                    {
+                      "name": "user_email",
+                      "expression": "`user_email`"
+                    },
+                    {
+                      "name": "user_email_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6d559a15229520b681a4d84516_user_email",
+                "query": {
+                  "datasetName": "views_by_user",
+                  "fields": [
+                    {
+                      "name": "user_email",
+                      "expression": "`user_email`"
+                    },
+                    {
+                      "name": "user_email_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6d672a1f7aa5802862701812a9_user_email",
+                "query": {
+                  "datasetName": "top_creators",
+                  "fields": [
+                    {
+                      "name": "user_email",
+                      "expression": "`user_email`"
+                    },
+                    {
+                      "name": "user_email_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6d43541283aa3a8dc9e9812287_user_email",
+                "query": {
+                  "datasetName": "recent_deletions",
+                  "fields": [
+                    {
+                      "name": "user_email",
+                      "expression": "`user_email`"
+                    },
+                    {
+                      "name": "user_email_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6cd67914138212ed4e094c42e5_user_filter",
+                "query": {
+                  "datasetName": "dashboards_created",
+                  "parameters": [
+                    {
+                      "name": "user_filter",
+                      "keyword": "user_filter"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6ce88b1b19aa7bf6db5de5d53a_user_filter",
+                "query": {
+                  "datasetName": "total_views",
+                  "parameters": [
+                    {
+                      "name": "user_filter",
+                      "keyword": "user_filter"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6d0b1c11e99e454c4b52584117_user_filter",
+                "query": {
+                  "datasetName": "dashboards_published",
+                  "parameters": [
+                    {
+                      "name": "user_filter",
+                      "keyword": "user_filter"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6d1d991e80867017fcdc5548d4_user_filter",
+                "query": {
+                  "datasetName": "daily_activity_trend",
+                  "parameters": [
+                    {
+                      "name": "user_filter",
+                      "keyword": "user_filter"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6cf8ec1e2992250075fd0e4829_user_filter",
+                "query": {
+                  "datasetName": "popular_dashboards",
+                  "parameters": [
+                    {
+                      "name": "user_filter",
+                      "keyword": "user_filter"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6d796a1906bfbc2ae296895421_user_filter",
+                "query": {
+                  "datasetName": "actions_summary",
+                  "parameters": [
+                    {
+                      "name": "user_filter",
+                      "keyword": "user_filter"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "User Email",
+                "showTitle": true
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "user_email",
+                    "queryName": "dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6eca231c54a031f0c6537ebe4e_user_email"
+                  },
+                  {
+                    "fieldName": "user_email",
+                    "queryName": "dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6d3a051b609ae40a20fb681bf1_user_email"
+                  },
+                  {
+                    "fieldName": "user_email",
+                    "queryName": "dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6d559a15229520b681a4d84516_user_email"
+                  },
+                  {
+                    "fieldName": "user_email",
+                    "queryName": "dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6d672a1f7aa5802862701812a9_user_email"
+                  },
+                  {
+                    "fieldName": "user_email",
+                    "queryName": "dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6d43541283aa3a8dc9e9812287_user_email"
+                  },
+                  {
+                    "parameterName": "user_filter",
+                    "queryName": "parameter_dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6cd67914138212ed4e094c42e5_user_filter"
+                  },
+                  {
+                    "parameterName": "user_filter",
+                    "queryName": "parameter_dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6ce88b1b19aa7bf6db5de5d53a_user_filter"
+                  },
+                  {
+                    "parameterName": "user_filter",
+                    "queryName": "parameter_dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6d0b1c11e99e454c4b52584117_user_filter"
+                  },
+                  {
+                    "parameterName": "user_filter",
+                    "queryName": "parameter_dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6d1d991e80867017fcdc5548d4_user_filter"
+                  },
+                  {
+                    "parameterName": "user_filter",
+                    "queryName": "parameter_dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6cf8ec1e2992250075fd0e4829_user_filter"
+                  },
+                  {
+                    "parameterName": "user_filter",
+                    "queryName": "parameter_dashboards/01f12f6c90721606a966be455cc3eb01/datasets/01f12f6d796a1906bfbc2ae296895421_user_filter"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 1
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}
