@@ -1,0 +1,76 @@
+version: 1.1
+
+source: "SELECT c.*, m.mbr_line_of_business, m.mbr_line_of_business_name FROM aira_test.aibi_workshop_schema.fact_claim_detail\
+  \ c LEFT JOIN aira_test.aibi_workshop_schema.dim_member m ON c.clm_dtl_member_nbr_sk\
+  \ = m.mbr_source_member_id"
+
+comment: "Claims KPIs - tracks claim volumes, paid/allowed/billed amounts, clean claim\
+  \ rates, and rolling window metrics"
+
+dimensions:
+  - name: Service Date
+    expr: clm_dtl_specific_dos_date
+  - name: Service Month
+    expr: "DATE_TRUNC('MONTH', clm_dtl_specific_dos_date)"
+  - name: Service Year
+    expr: CAST(YEAR(clm_dtl_specific_dos_date) AS STRING)
+  - name: Benefit Category
+    expr: clm_dtl_benefit_category
+  - name: Claim Type
+    expr: |-
+      CASE
+        WHEN clm_dtl_place_of_service = '21' THEN 'Inpatient'
+        WHEN clm_dtl_place_of_service IN ('22', '23') THEN 'Outpatient'
+        WHEN clm_dtl_place_of_service = '11' THEN 'Professional'
+        WHEN clm_dtl_benefit_category = 'Pharmacy' THEN 'Pharmacy'
+        ELSE 'Other'
+      END
+  - name: Line of Business
+    expr: mbr_line_of_business
+
+measures:
+  - name: Total Claims
+    expr: COUNT(DISTINCT clm_dtl_claim_id)
+  - name: Total Claim Lines
+    expr: COUNT(1)
+  - name: Total Paid Amount
+    expr: SUM(clm_dtl_paid_amt)
+  - name: Total Allowed Amount
+    expr: SUM(clm_dtl_allowed_amt)
+  - name: Total Billed Amount
+    expr: SUM(clm_dtl_billed_amt)
+  - name: Avg Paid per Claim
+    expr: MEASURE(`Total Paid Amount`) / MEASURE(`Total Claims`)
+  - name: Clean Claim Count
+    expr: COUNT(1) FILTER (WHERE clm_dtl_clean_claim_ind = 'Y')
+  - name: Clean Claim Rate
+    expr: MEASURE(`Clean Claim Count`) / MEASURE(`Total Claim Lines`)
+  - name: Inpatient Claim Count
+    expr: COUNT(DISTINCT clm_dtl_claim_id) FILTER (WHERE clm_dtl_place_of_service
+      = '21')
+  - name: Rolling 7d Claims
+    expr: COUNT(DISTINCT clm_dtl_claim_id)
+    window:
+      - order: Service Date
+        semiadditive: last
+        range: trailing 7 day
+  - name: Running Total Paid
+    expr: SUM(clm_dtl_paid_amt)
+    window:
+      - order: Service Month
+        semiadditive: last
+        range: cumulative
+  - name: Rolling 90d Clean Count
+    expr: COUNT(1) FILTER (WHERE clm_dtl_clean_claim_ind = 'Y')
+    window:
+      - order: Service Date
+        semiadditive: last
+        range: trailing 90 day
+  - name: Rolling 90d Total Count
+    expr: COUNT(1)
+    window:
+      - order: Service Date
+        semiadditive: last
+        range: trailing 90 day
+  - name: Rolling 90d Clean Rate
+    expr: MEASURE(`Rolling 90d Clean Count`) / MEASURE(`Rolling 90d Total Count`)

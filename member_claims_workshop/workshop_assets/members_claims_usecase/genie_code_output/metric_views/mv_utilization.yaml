@@ -1,0 +1,103 @@
+version: 1.1
+
+source: |-
+  WITH member_months AS (
+    SELECT DISTINCT
+      e.member_sk,
+      m.mbr_source_member_id,
+      m.mbr_line_of_business,
+      DATE_TRUNC('MONTH', e.mbr_enr_effective_date) as enrollment_month
+    FROM aira_test.aibi_workshop_schema.fact_member_enrollment e
+    JOIN aira_test.aibi_workshop_schema.dim_member m ON e.member_sk = m.member_sk
+  ), monthly_claims AS (
+    SELECT
+      clm_dtl_member_nbr_sk,
+      DATE_TRUNC('MONTH', clm_dtl_specific_dos_date) as service_month,
+      SUM(clm_dtl_paid_amt) as paid_amount,
+      COUNT(DISTINCT clm_dtl_claim_id) as claim_count
+    FROM aira_test.aibi_workshop_schema.fact_claim_detail
+    GROUP BY clm_dtl_member_nbr_sk, DATE_TRUNC('MONTH', clm_dtl_specific_dos_date)
+  ) SELECT
+    mm.member_sk,
+    mm.mbr_line_of_business,
+    mm.enrollment_month,
+    COALESCE(mc.paid_amount, 0) as monthly_paid,
+    COALESCE(mc.claim_count, 0) as monthly_claims,
+    CASE WHEN COALESCE(mc.claim_count, 0) > 0 THEN 1 ELSE 0 END as has_claims_flag
+  FROM member_months mm LEFT JOIN monthly_claims mc
+    ON mm.mbr_source_member_id = mc.clm_dtl_member_nbr_sk
+    AND mm.enrollment_month = mc.service_month
+
+comment: Utilization & PMPM - member-month grain combining enrollment with claims
+  for cost and utilization analysis
+
+dimensions:
+  - name: Enrollment Month
+    expr: enrollment_month
+  - name: Enrollment Year
+    expr: "DATE_TRUNC('YEAR', enrollment_month)"
+  - name: Line of Business
+    expr: mbr_line_of_business
+
+measures:
+  - name: Member Months
+    expr: COUNT(1)
+  - name: Total Paid
+    expr: SUM(monthly_paid)
+  - name: Total Claims
+    expr: SUM(monthly_claims)
+  - name: PMPM
+    expr: MEASURE(`Total Paid`) / MEASURE(`Member Months`)
+  - name: Claims per 1000 Members
+    expr: MEASURE(`Total Claims`) / MEASURE(`Member Months`) * 1000
+  - name: Utilization Rate
+    expr: CAST(SUM(has_claims_flag) AS DOUBLE) / MEASURE(`Member Months`)
+  - name: Rolling 3mo Paid
+    expr: SUM(monthly_paid)
+    window:
+      - order: Enrollment Month
+        semiadditive: last
+        range: trailing 3 month
+  - name: Rolling 3mo Member Months
+    expr: COUNT(1)
+    window:
+      - order: Enrollment Month
+        semiadditive: last
+        range: trailing 3 month
+  - name: Rolling 3mo PMPM
+    expr: MEASURE(`Rolling 3mo Paid`) / MEASURE(`Rolling 3mo Member Months`)
+  - name: YTD Paid
+    expr: SUM(monthly_paid)
+    window:
+      - order: Enrollment Month
+        semiadditive: last
+        range: cumulative
+      - order: Enrollment Year
+        semiadditive: last
+        range: current
+  - name: YTD Member Months
+    expr: COUNT(1)
+    window:
+      - order: Enrollment Month
+        semiadditive: last
+        range: cumulative
+      - order: Enrollment Year
+        semiadditive: last
+        range: current
+  - name: YTD PMPM
+    expr: MEASURE(`YTD Paid`) / MEASURE(`YTD Member Months`)
+  - name: Current Month Members
+    expr: COUNT(DISTINCT member_sk)
+    window:
+      - order: Enrollment Month
+        semiadditive: last
+        range: current
+  - name: Previous Month Members
+    expr: COUNT(DISTINCT member_sk)
+    window:
+      - order: Enrollment Month
+        semiadditive: last
+        range: trailing 1 month
+  - name: MoM Active Member Growth Pct
+    expr: (MEASURE(`Current Month Members`) - MEASURE(`Previous Month Members`)) /
+      MEASURE(`Previous Month Members`) * 100

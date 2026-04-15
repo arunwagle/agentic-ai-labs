@@ -1,0 +1,49 @@
+version: 1.1
+
+source: |-
+  SELECT
+    e.member_sk,
+    m.mbr_line_of_business,
+    m.mbr_state,
+    e.first_enrollment_date
+  FROM (
+    SELECT
+      member_sk,
+      MIN(mbr_enr_effective_date) as first_enrollment_date
+    FROM aira_test.aibi_workshop_schema.fact_member_enrollment
+    GROUP BY member_sk
+  ) e JOIN aira_test.aibi_workshop_schema.dim_member m ON e.member_sk = m.member_sk
+
+comment: Member Lifecycle - tracks first enrollment dates with rolling and cumulative
+  enrollment metrics
+
+dimensions:
+  - name: First Enrollment Date
+    expr: first_enrollment_date
+  - name: First Enrollment Month
+    expr: "DATE_TRUNC('MONTH', first_enrollment_date)"
+  - name: First Enrollment Year
+    expr: "DATE_TRUNC('YEAR', first_enrollment_date)"
+  - name: Line of Business
+    expr: mbr_line_of_business
+  - name: State
+    expr: mbr_state
+
+measures:
+  - name: New Enrollments
+    expr: COUNT(1)
+  - name: Rolling 30d New Enrollments
+    expr: COUNT(1)
+    window:
+      - order: First Enrollment Date
+        semiadditive: last
+        range: trailing 30 day
+  - name: Cumulative YTD New Enrollments
+    expr: COUNT(1)
+    window:
+      - order: First Enrollment Month
+        semiadditive: last
+        range: cumulative
+      - order: First Enrollment Year
+        semiadditive: last
+        range: current

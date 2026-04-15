@@ -1,0 +1,447 @@
+version: 1.1
+
+source: aira_test.aibi_workshop_mv_schema.fact_claim_detail
+
+joins:
+  - name: header
+    source: aira_test.aibi_workshop_mv_schema.fact_claim_header
+    "on": source.clm_dtl_claim_id = header.clm_claim_id
+  - name: member
+    source: aira_test.jh_workshop_schema_day2.dim_member
+    "on": source.clm_dtl_member_nbr_sk = member.mbr_source_member_id
+
+dimensions:
+  - name: service_month
+    expr: "DATE_TRUNC('month', source.clm_dtl_specific_dos_date)"
+    comment: Month of the date of service.
+    display_name: Service Month
+    synonyms:
+      - month
+      - dos month
+  - name: service_date
+    expr: source.clm_dtl_specific_dos_date
+    comment: Specific date of service.
+    display_name: Service Date
+    synonyms:
+      - date of service
+  - name: claim_type
+    expr: |-
+      CASE
+        WHEN header.clm_claim_type = 'I' THEN 'Institutional'
+        WHEN header.clm_claim_type = 'P' THEN 'Professional'
+        ELSE header.clm_claim_type
+      END
+    comment: Institutional or Professional.
+    display_name: Claim Type
+    synonyms:
+      - claim category
+  - name: line_of_business
+    expr: |-
+      CASE
+        WHEN header.clm_line_of_business = 'COM' THEN 'Commercial'
+        WHEN header.clm_line_of_business = 'MCD' THEN 'Medicaid'
+        WHEN header.clm_line_of_business = 'MCR' THEN 'Medicare'
+        WHEN header.clm_line_of_business = 'MMP' THEN 'Medicare-Medicaid Plan'
+        WHEN header.clm_line_of_business = 'EXC' THEN 'Exchange'
+        ELSE header.clm_line_of_business
+      END
+    comment: Product line or insurance program.
+    display_name: Line of Business
+    synonyms:
+      - lob
+      - product
+      - insurance type
+  - name: line_of_business_code
+    expr: header.clm_line_of_business
+    comment: Raw LOB code.
+    display_name: LOB Code
+  - name: line_status
+    expr: source.clm_dtl_line_status
+    comment: "Paid, Denied, Adjusted, or Pending."
+    display_name: Line Status
+    synonyms:
+      - claim status
+  - name: adjudication_status
+    expr: source.clm_dtl_adjudication_status
+    comment: "Final, Interim, or Reopened."
+    display_name: Adjudication Status
+  - name: clean_claim_indicator
+    expr: source.clm_dtl_clean_claim_ind
+    comment: Clean claim flag (Y/N).
+    display_name: Clean Claim Indicator
+  - name: par_provider_indicator
+    expr: source.clm_dtl_participating_provider
+    comment: In-network flag (Y/N).
+    display_name: Participating Provider
+    synonyms:
+      - in-network
+  - name: rendering_provider
+    expr: source.clm_dtl_rendering_provider
+    comment: Rendering provider name.
+    display_name: Rendering Provider
+    synonyms:
+      - provider
+  - name: provider_specialty
+    expr: source.clm_dtl_rendering_provider_spec
+    comment: Provider specialty.
+    display_name: Provider Specialty
+    synonyms:
+      - specialty
+  - name: member_sex
+    expr: member.mbr_sex
+    comment: Member sex.
+    display_name: Member Sex
+    synonyms:
+      - gender
+  - name: member_state
+    expr: member.mbr_state
+    comment: Member state of residence.
+    display_name: Member State
+    synonyms:
+      - state
+      - geography
+  - name: member_zip_code
+    expr: member.mbr_zip_code
+    comment: Member ZIP code.
+    display_name: Member ZIP Code
+  - name: member_age_group
+    expr: |-
+      CASE
+        WHEN FLOOR(DATEDIFF(source.clm_dtl_specific_dos_date, member.mbr_dob) / 365.25) < 18 THEN 'Under 18'
+        WHEN FLOOR(DATEDIFF(source.clm_dtl_specific_dos_date, member.mbr_dob) / 365.25) BETWEEN 18 AND 25 THEN '18-25'
+        WHEN FLOOR(DATEDIFF(source.clm_dtl_specific_dos_date, member.mbr_dob) / 365.25) BETWEEN 26 AND 35 THEN '26-35'
+        WHEN FLOOR(DATEDIFF(source.clm_dtl_specific_dos_date, member.mbr_dob) / 365.25) BETWEEN 36 AND 45 THEN '36-45'
+        WHEN FLOOR(DATEDIFF(source.clm_dtl_specific_dos_date, member.mbr_dob) / 365.25) BETWEEN 46 AND 55 THEN '46-55'
+        WHEN FLOOR(DATEDIFF(source.clm_dtl_specific_dos_date, member.mbr_dob) / 365.25) BETWEEN 56 AND 64 THEN '56-64'
+        WHEN FLOOR(DATEDIFF(source.clm_dtl_specific_dos_date, member.mbr_dob) / 365.25) >= 65 THEN '65+'
+        ELSE 'Unknown'
+      END
+    comment: Age group at time of service.
+    display_name: Member Age Group
+    synonyms:
+      - age band
+  - name: member_line_of_business
+    expr: member.mbr_line_of_business_name
+    comment: Member line of business from enrollment.
+    display_name: Member LOB
+  - name: benefit_category
+    expr: source.clm_dtl_benefit_category
+    comment: Benefit category.
+    display_name: Benefit Category
+  - name: place_of_service
+    expr: source.clm_dtl_place_of_service
+    comment: Place of service code.
+    display_name: Place of Service
+
+measures:
+  - name: total_claims
+    expr: COUNT(DISTINCT source.clm_dtl_claim_id)
+    comment: Count of distinct claims.
+    display_name: Total Claims (C-1)
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+    synonyms:
+      - claim count
+  - name: total_claim_lines
+    expr: COUNT(*)
+    comment: Count of all claim lines.
+    display_name: Total Claim Lines (C-2)
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+  - name: total_paid
+    expr: SUM(source.clm_dtl_paid_amt)
+    comment: Sum of paid amounts. Always SUM.
+    display_name: Total Paid Amount (C-3)
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+    synonyms:
+      - paid amount
+      - total cost
+  - name: total_billed
+    expr: SUM(source.clm_dtl_billed_amt)
+    comment: Sum of billed amounts.
+    display_name: Total Billed Amount
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+  - name: total_allowed
+    expr: SUM(source.clm_dtl_allowed_amt)
+    comment: Sum of allowed amounts.
+    display_name: Total Allowed Amount
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+  - name: unique_members
+    expr: COUNT(DISTINCT member.member_sk)
+    comment: Distinct members with claims. Semi-additive.
+    display_name: Unique Members
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+    synonyms:
+      - member count
+  - name: member_months
+    expr: "COUNT(DISTINCT CONCAT(CAST(member.member_sk AS STRING), '-', CAST(DATE_TRUNC('month',\
+      \ source.clm_dtl_specific_dos_date) AS STRING)))"
+    comment: Distinct member-month combinations.
+    display_name: Member Months
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+  - name: denied_lines
+    expr: COUNT(*) FILTER (WHERE source.clm_dtl_line_status = 'Denied')
+    comment: Lines with Denied status.
+    display_name: Denied Claim Lines
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+  - name: clean_lines
+    expr: COUNT(*) FILTER (WHERE source.clm_dtl_clean_claim_ind = 'Y')
+    comment: Lines flagged as clean.
+    display_name: Clean Claim Lines
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+  - name: par_paid
+    expr: SUM(source.clm_dtl_paid_amt) FILTER (WHERE source.clm_dtl_participating_provider
+      = 'Y')
+    comment: Paid for in-network providers.
+    display_name: Participating Provider Paid
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+  - name: inpatient_paid
+    expr: SUM(source.clm_dtl_paid_amt) FILTER (WHERE header.clm_claim_type = 'I')
+    comment: Paid for Institutional claims.
+    display_name: Inpatient Paid Amount
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+  - name: outpatient_paid
+    expr: SUM(source.clm_dtl_paid_amt) FILTER (WHERE header.clm_claim_type = 'P')
+    comment: Paid for Professional claims.
+    display_name: Outpatient Paid Amount
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+  - name: members_with_claims
+    expr: COUNT(DISTINCT member.member_sk)
+    comment: Members with at least one claim.
+    display_name: Members with Claims
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+  - name: avg_paid_per_claim
+    expr: "MEASURE(total_paid) / NULLIF(MEASURE(total_claims), 0)"
+    comment: Average paid per claim. Ratio.
+    display_name: Average Paid per Claim (C-4)
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+  - name: pmpm
+    expr: "MEASURE(total_paid) / NULLIF(MEASURE(member_months), 0)"
+    comment: Per Member Per Month cost. Never sum.
+    display_name: PMPM (MC-1)
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+    synonyms:
+      - per member per month
+  - name: claims_per_1000_members
+    expr: "(MEASURE(total_claims) / NULLIF(MEASURE(member_months), 0)) * 1000"
+    comment: "Claim frequency per 1,000 member-months."
+    display_name: "Claims per 1,000 Members (MC-2)"
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 1
+  - name: denial_rate
+    expr: "MEASURE(denied_lines) / NULLIF(MEASURE(total_claim_lines), 0)"
+    comment: Share of lines denied.
+    display_name: Denial Rate
+    format:
+      type: percentage
+      decimal_places:
+        type: exact
+        places: 2
+  - name: clean_claim_rate
+    expr: "MEASURE(clean_lines) / NULLIF(MEASURE(total_claim_lines), 0)"
+    comment: Share of lines that are clean.
+    display_name: Clean Claim Rate
+    format:
+      type: percentage
+      decimal_places:
+        type: exact
+        places: 2
+  - name: payment_to_billed_ratio
+    expr: "MEASURE(total_paid) / NULLIF(MEASURE(total_billed), 0)"
+    comment: Paid to billed ratio.
+    display_name: Payment-to-Billed Ratio
+    format:
+      type: percentage
+      decimal_places:
+        type: exact
+        places: 2
+  - name: payment_to_allowed_ratio
+    expr: "MEASURE(total_paid) / NULLIF(MEASURE(total_allowed), 0)"
+    comment: Paid to allowed ratio.
+    display_name: Payment-to-Allowed Ratio
+    format:
+      type: percentage
+      decimal_places:
+        type: exact
+        places: 2
+  - name: avg_paid_per_member
+    expr: "MEASURE(total_paid) / NULLIF(MEASURE(unique_members), 0)"
+    comment: Total paid per unique member.
+    display_name: Average Paid per Member
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+  - name: claims_per_member
+    expr: "MEASURE(total_claims) / NULLIF(MEASURE(unique_members), 0)"
+    comment: Claims per unique member.
+    display_name: Claims per Member
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 2
+  - name: lines_per_claim
+    expr: "MEASURE(total_claim_lines) / NULLIF(MEASURE(total_claims), 0)"
+    comment: Average lines per claim.
+    display_name: Lines per Claim
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 2
+  - name: par_provider_rate
+    expr: "MEASURE(par_paid) / NULLIF(MEASURE(total_paid), 0)"
+    comment: Share of paid to in-network providers.
+    display_name: Participating Provider Rate
+    format:
+      type: percentage
+      decimal_places:
+        type: exact
+        places: 2
+  - name: trailing_3m_paid
+    expr: SUM(source.clm_dtl_paid_amt)
+    window:
+      - order: service_month
+        semiadditive: last
+        range: trailing 3 month
+    comment: Paid over trailing 3-month window.
+    display_name: Trailing 3-Month Paid
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+  - name: trailing_3m_member_months
+    expr: "COUNT(DISTINCT CONCAT(CAST(member.member_sk AS STRING), '-', CAST(DATE_TRUNC('month',\
+      \ source.clm_dtl_specific_dos_date) AS STRING)))"
+    window:
+      - order: service_month
+        semiadditive: last
+        range: trailing 3 month
+    comment: Member-months over trailing 3-month window.
+    display_name: Trailing 3-Month Member Months
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+  - name: rolling_3m_pmpm
+    expr: "MEASURE(trailing_3m_paid) / NULLIF(MEASURE(trailing_3m_member_months),\
+      \ 0)"
+    comment: Rolling 3-month PMPM.
+    display_name: Rolling 3-Month PMPM (W-1)
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+  - name: previous_month_members
+    expr: COUNT(DISTINCT member.member_sk)
+    window:
+      - order: service_month
+        semiadditive: last
+        range: trailing 1 month
+    comment: Members in prior month.
+    display_name: Previous Month Members
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+  - name: current_month_members
+    expr: COUNT(DISTINCT member.member_sk)
+    window:
+      - order: service_month
+        semiadditive: last
+        range: current
+    comment: Members in current month.
+    display_name: Current Month Members
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+  - name: mom_active_member_growth
+    expr: "(MEASURE(current_month_members) - MEASURE(previous_month_members)) / NULLIF(MEASURE(previous_month_members),\
+      \ 0)"
+    comment: Month-over-month member growth.
+    display_name: MoM Active Member Growth (W-2)
+    format:
+      type: percentage
+      decimal_places:
+        type: exact
+        places: 2

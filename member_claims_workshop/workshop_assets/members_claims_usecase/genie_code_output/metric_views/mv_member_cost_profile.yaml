@@ -1,0 +1,54 @@
+version: 1.1
+
+source: |-
+  SELECT
+    m.member_sk,
+    m.mbr_line_of_business,
+    m.mbr_line_of_business_name,
+    m.mbr_state,
+    m.mbr_sex,
+    m.is_active as member_is_active,
+    COALESCE(c.total_paid, 0) as member_total_paid,
+    COALESCE(c.claim_count, 0) as member_claim_count,
+    CASE WHEN COALESCE(c.total_paid, 0) > 50000 THEN 1 ELSE 0 END as is_high_cost_member,
+    CASE WHEN COALESCE(c.pcp_visit_count, 0) > 0 THEN 1 ELSE 0 END as has_pcp_visit
+  FROM aira_test.aibi_workshop_schema.dim_member m LEFT JOIN (
+    SELECT
+      clm_dtl_member_nbr_sk,
+      SUM(clm_dtl_paid_amt) as total_paid,
+      COUNT(DISTINCT clm_dtl_claim_id) as claim_count,
+      SUM(CASE WHEN clm_dtl_place_of_service = '11' THEN 1 ELSE 0 END) as pcp_visit_count
+    FROM aira_test.aibi_workshop_schema.fact_claim_detail
+    GROUP BY clm_dtl_member_nbr_sk
+  ) c ON m.mbr_source_member_id = c.clm_dtl_member_nbr_sk
+
+comment: Member Cost Profile - per-member cost analysis with high-cost identification
+  and PCP utilization
+
+dimensions:
+  - name: Line of Business Name
+    expr: mbr_line_of_business_name
+  - name: Line of Business
+    expr: mbr_line_of_business
+  - name: State
+    expr: mbr_state
+  - name: Sex
+    expr: mbr_sex
+
+measures:
+  - name: Active Members
+    expr: COUNT(1) FILTER (WHERE member_is_active = true)
+  - name: Members with Claims
+    expr: COUNT(1) FILTER (WHERE member_claim_count > 0)
+  - name: Total Paid Amount
+    expr: SUM(member_total_paid)
+  - name: Avg Cost per Member
+    expr: MEASURE(`Total Paid Amount`) / MEASURE(`Active Members`)
+  - name: High-Cost Member Count
+    expr: SUM(is_high_cost_member)
+  - name: High-Cost Member Spend Pct
+    expr: SUM(member_total_paid) FILTER (WHERE is_high_cost_member = 1) / MEASURE(`Total
+      Paid Amount`)
+  - name: PCP Utilization Rate
+    expr: CAST(SUM(has_pcp_visit) FILTER (WHERE member_is_active = true) AS DOUBLE)
+      / MEASURE(`Active Members`)

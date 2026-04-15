@@ -1,0 +1,32 @@
+version: 1.1
+
+source: |-
+  SELECT
+    e.member_sk,
+    m.mbr_line_of_business,
+    m.mbr_state,
+    e.first_enrollment_date
+  FROM (
+    SELECT
+      member_sk,
+      MIN(mbr_enr_effective_date) as first_enrollment_date
+    FROM aira_test.aibi_workshop_schema.fact_member_enrollment
+    GROUP BY member_sk
+  ) e JOIN aira_test.aibi_workshop_schema.dim_member m ON e.member_sk = m.member_sk
+
+comment: New Enrollment - tracks first enrollment events for filter support and enrollment
+  trend analysis
+
+dimensions:
+  - name: Line of Business
+    expr: mbr_line_of_business
+  - name: State
+    expr: mbr_state
+  - name: First Enrollment Date
+    expr: first_enrollment_date
+  - name: First Enrollment Month
+    expr: "DATE_TRUNC('MONTH', first_enrollment_date)"
+
+measures:
+  - name: New Enrollments
+    expr: COUNT(1)
